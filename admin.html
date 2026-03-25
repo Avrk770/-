@@ -73,30 +73,6 @@
         font-weight: 700 !important;
       }
 
-      .gallery-card.sortable-chosen {
-        transform: scale(1.02);
-        box-shadow: 0 18px 36px -20px rgba(0, 0, 0, 0.65);
-      }
-
-      .gallery-card.sortable-ghost {
-        opacity: 0.3;
-        filter: saturate(0.8);
-      }
-
-      .gallery-card.sortable-drag {
-        opacity: 0.98 !important;
-        transform: scale(1.03) rotate(0.3deg);
-        box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.75);
-      }
-
-      .drag-handle {
-        cursor: grab;
-      }
-
-      .drag-handle:active {
-        cursor: grabbing;
-      }
-
       .dashboard-animate-in {
         animation: dashboardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
       }
@@ -316,7 +292,7 @@
               <h3 class="text-base font-semibold">תמונות פעילות באתר</h3>
               <span id="items-count-active" class="text-xs text-on-surface-variant dark:text-white/60">0</span>
             </div>
-            <p class="text-xs text-on-surface-variant dark:text-white/60">במצב עריכה אפשר לגרור תמונות פעילות כדי לשנות סדר הופעה באתר.</p>
+            <p class="text-xs text-on-surface-variant dark:text-white/60">במצב עריכה אפשר לשנות סדר עם כפתורי למעלה/למטה על כל תמונה פעילה.</p>
             <div id="items-grid-active" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3"></div>
           </section>
 
@@ -391,7 +367,6 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
     <script src="./app-config.js"></script>
     <script src="./assets/admin.js"></script>
     <script>

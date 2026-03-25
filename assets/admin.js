@@ -50,7 +50,6 @@
   let isSavingOrder = false;
   let closeModalTimer = null;
   let dropzoneDragDepth = 0;
-  let sortableInstance = null;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -191,61 +190,6 @@
 
     updateSelectionUi();
     renderItems(galleryItems);
-    syncSortableState();
-  }
-
-  function initSortableReorder() {
-    if (!itemsGridActive || sortableInstance) {
-      return;
-    }
-
-    if (!window.Sortable || typeof window.Sortable.create !== "function") {
-      setFeedback("error", "ספריית הגרירה לא נטענה. בצע רענון קשיח כדי להפעיל שינוי סדר.");
-      return;
-    }
-
-    sortableInstance = window.Sortable.create(itemsGridActive, {
-      animation: 220,
-      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-      ghostClass: "sortable-ghost",
-      chosenClass: "sortable-chosen",
-      dragClass: "sortable-drag",
-      draggable: ".gallery-card",
-      handle: ".drag-handle",
-      forceFallback: false,
-      fallbackOnBody: false,
-      swapThreshold: 1,
-      invertSwap: true,
-      invertedSwapThreshold: 1,
-      emptyInsertThreshold: 24,
-      direction: "horizontal",
-      fallbackTolerance: 3,
-      disabled: !isEditMode,
-      onMove: function (evt, originalEvent) {
-        if (!evt.related && evt.to) {
-          const rect = evt.to.getBoundingClientRect();
-          if (originalEvent && originalEvent.clientY < rect.top + rect.height * 0.25) {
-            evt.to.insertBefore(evt.dragged, evt.to.firstElementChild);
-          } else if (originalEvent && originalEvent.clientY > rect.bottom - rect.height * 0.25) {
-            evt.to.appendChild(evt.dragged);
-          }
-        }
-      },
-      onEnd: async function () {
-        if (!isEditMode) {
-          return;
-        }
-        await persistOrderFromDom();
-      }
-    });
-  }
-
-  function syncSortableState() {
-    if (!sortableInstance) {
-      return;
-    }
-
-    sortableInstance.option("disabled", !isEditMode);
   }
 
   function updateHiddenSectionUi() {
@@ -319,6 +263,8 @@
         const imageUrl = escapeHtml(item.image_url || "");
         const storagePath = escapeHtml(item.storage_path || "");
         const isSelected = selectedIds.has(item.id);
+        const canMoveUp = isActiveSection && index > 0;
+        const canMoveDown = isActiveSection && index < items.length - 1;
 
         return (
           '<article class="gallery-card rounded-xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden shadow-sm ' +
@@ -349,10 +295,19 @@
           (isEditMode
             ? '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2"><div class="grid grid-cols-2 gap-2"><button type="button" class="toggle-publish rounded-md bg-white/90 dark:bg-white/15 dark:text-white px-2 py-1.5 text-[11px] hover:bg-white dark:hover:bg-white/25">' +
               (item.is_published ? "הסתר" : "פרסם") +
-              '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div></div>'
-            : "") +
-          (isEditMode && isActiveSection
-            ? '<span class="drag-handle absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>'
+              '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div>' +
+              (isActiveSection
+                ? '<div class="mt-2 grid grid-cols-2 gap-2"><button type="button" class="move-up rounded-md bg-sky-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-sky-500 ' +
+                  (canMoveUp ? "" : "opacity-40 cursor-not-allowed") +
+                  '" ' +
+                  (canMoveUp ? "" : "disabled") +
+                  '>למעלה</button><button type="button" class="move-down rounded-md bg-sky-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-sky-500 ' +
+                  (canMoveDown ? "" : "opacity-40 cursor-not-allowed") +
+                  '" ' +
+                  (canMoveDown ? "" : "disabled") +
+                  '>למטה</button></div>'
+                : "") +
+              "</div>"
             : "") +
           (isEditMode && isActiveSection
             ? '<span class="absolute top-2 left-11 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
@@ -856,6 +811,16 @@
 
     const itemId = card.dataset.id;
 
+    if (event.target.classList.contains("move-up")) {
+      await moveActiveItem(itemId, -1);
+      return;
+    }
+
+    if (event.target.classList.contains("move-down")) {
+      await moveActiveItem(itemId, 1);
+      return;
+    }
+
     if (event.target.classList.contains("toggle-publish")) {
       await togglePublish(itemId);
       return;
@@ -866,14 +831,49 @@
     }
   }
 
-  async function persistOrderFromDom() {
-    if (!isEditMode || !itemsGridActive) {
+  async function moveActiveItem(itemId, direction) {
+    if (!isEditMode || isSavingOrder) {
       return;
     }
 
-    const orderedIds = Array.from(itemsGridActive.querySelectorAll(".gallery-card")).map(function (card) {
-      return card.dataset.id;
+    const activeItems = galleryItems.filter(function (item) {
+      return item.is_published;
     });
+    const currentIndex = activeItems.findIndex(function (item) {
+      return item.id === itemId;
+    });
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= activeItems.length) {
+      return;
+    }
+
+    const movedItem = activeItems[currentIndex];
+    activeItems.splice(currentIndex, 1);
+    activeItems.splice(targetIndex, 0, movedItem);
+
+    const orderedIds = activeItems.map(function (item) {
+      return item.id;
+    });
+
+    await persistOrderFromDom(orderedIds);
+  }
+
+  async function persistOrderFromDom(orderedIdsFromUi) {
+    if (!isEditMode) {
+      return;
+    }
+
+    let orderedIds = Array.isArray(orderedIdsFromUi) ? orderedIdsFromUi.slice() : [];
+    if (!orderedIds.length && itemsGridActive) {
+      orderedIds = Array.from(itemsGridActive.querySelectorAll(".gallery-card")).map(function (card) {
+        return card.dataset.id;
+      });
+    }
 
     if (!orderedIds.length) {
       return;
@@ -1030,7 +1030,6 @@
 
     itemsGridActive.addEventListener("click", handleGridClick);
     itemsGridActive.addEventListener("change", handleGridChange);
-    initSortableReorder();
 
     itemsGridHidden.addEventListener("click", handleGridClick);
     itemsGridHidden.addEventListener("change", handleGridChange);

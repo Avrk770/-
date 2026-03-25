@@ -14,6 +14,7 @@
   const refreshBtn = document.getElementById("refresh-items");
   const feedbackEl = document.getElementById("feedback");
   const itemsGrid = document.getElementById("items-grid");
+  const itemsCountEl = document.getElementById("items-count");
 
   let supabaseClient = null;
   let galleryItems = [];
@@ -82,9 +83,13 @@
   }
 
   function renderItems(items) {
+    if (itemsCountEl) {
+      itemsCountEl.textContent = items.length + " תמונות";
+    }
+
     if (!items.length) {
       itemsGrid.innerHTML =
-        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-8 text-center text-on-surface-variant">אין עדיין תמונות בגלריה.</div>';
+        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-6 text-center text-on-surface-variant">אין עדיין תמונות בגלריה.</div>';
       return;
     }
 
@@ -95,7 +100,7 @@
         const isPublished = item.is_published;
 
         return (
-          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden" draggable="true" data-id="' +
+          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden shadow-sm" draggable="true" data-id="' +
           item.id +
           '" data-storage-path="' +
           storagePath +
@@ -106,23 +111,23 @@
           '<img src="' +
           imageUrl +
           '" alt="" class="h-full w-full object-cover" draggable="false">' +
+          '<span class="absolute top-2 left-2 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
+          (index + 1) +
+          "</span>" +
           '<span class="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs ' +
           (isPublished ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700") +
           '">' +
           (isPublished ? "באתר" : "מוסתר") +
           "</span>" +
-          "</div>" +
-          '<div class="p-3 space-y-2">' +
-          '<p class="text-xs text-on-surface-variant">סדר תצוגה: ' +
-          (index + 1) +
-          "</p>" +
+          '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">' +
           '<div class="grid grid-cols-2 gap-2">' +
-          '<button type="button" class="toggle-publish rounded-lg border border-outline-variant px-3 py-2 text-xs hover:bg-surface-container-low">' +
-          (isPublished ? "הסתר מהאתר" : "פרסם באתר") +
+          '<button type="button" class="toggle-publish rounded-md bg-white/90 px-2 py-1.5 text-[11px] hover:bg-white">' +
+          (isPublished ? "הסתר" : "פרסם") +
           "</button>" +
-          '<button type="button" class="delete-item rounded-lg border border-red-300 text-red-700 px-3 py-2 text-xs hover:bg-red-50">מחק</button>' +
+          '<button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button>' +
           "</div>" +
-          '<p class="text-[11px] text-on-surface-variant">גרור לשינוי סדר</p>' +
+          "</div>" +
+          '<span class="absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>' +
           "</div>" +
           "</article>"
         );
@@ -213,11 +218,16 @@
     }
 
     if (!fileInput.files || !fileInput.files.length) {
-      selectedFileName.textContent = "לא נבחר קובץ";
+      selectedFileName.textContent = "לא נבחרו קבצים";
       return;
     }
 
-    selectedFileName.textContent = fileInput.files[0].name;
+    if (fileInput.files.length === 1) {
+      selectedFileName.textContent = fileInput.files[0].name;
+      return;
+    }
+
+    selectedFileName.textContent = "נבחרו " + fileInput.files.length + " קבצים";
   }
 
   async function handleUpload(event) {
@@ -225,56 +235,91 @@
     clearFeedback();
 
     const formData = new FormData(uploadForm);
-    const imageFile = formData.get("image_file");
+    const files = Array.from(fileInput.files || []);
+    const publishNow = formData.get("is_published") === "on";
 
-    if (!(imageFile instanceof File) || !imageFile.size) {
+    if (!files.length) {
       setFeedback("error", "בחר קובץ תמונה לפני העלאה.");
       return;
     }
-
-    const uploadPath = Date.now() + "-" + safeFileName(imageFile.name);
-
-    const { error: storageError } = await supabaseClient.storage
-      .from(bucketName)
-      .upload(uploadPath, imageFile, {
-        cacheControl: "3600",
-        upsert: false
-      });
-
-    if (storageError) {
-      setFeedback("error", "העלאה ל-Storage נכשלה: " + storageError.message);
-      return;
-    }
-
-    const {
-      data: { publicUrl }
-    } = supabaseClient.storage.from(bucketName).getPublicUrl(uploadPath);
 
     const maxOrder = galleryItems.reduce(function (max, item) {
       return Math.max(max, Number(item.sort_order || 0));
     }, 0);
 
-    const payload = {
-      title: null,
-      alt_text: deriveAltTextFromFileName(imageFile.name),
-      category: null,
-      sort_order: maxOrder + 10,
-      is_published: formData.get("is_published") === "on",
-      image_url: publicUrl,
-      storage_path: uploadPath
-    };
+    let successCount = 0;
+    let failedCount = 0;
+    const failedNames = [];
 
-    const { error: insertError } = await supabaseClient.from("gallery_items").insert(payload);
+    for (let index = 0; index < files.length; index += 1) {
+      const imageFile = files[index];
+      const uploadPath = Date.now() + "-" + index + "-" + safeFileName(imageFile.name);
 
-    if (insertError) {
-      await supabaseClient.storage.from(bucketName).remove([uploadPath]);
-      setFeedback("error", "שמירה למסד הנתונים נכשלה: " + insertError.message);
-      return;
+      const { error: storageError } = await supabaseClient.storage
+        .from(bucketName)
+        .upload(uploadPath, imageFile, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+      if (storageError) {
+        failedCount += 1;
+        failedNames.push(imageFile.name);
+        continue;
+      }
+
+      const {
+        data: { publicUrl }
+      } = supabaseClient.storage.from(bucketName).getPublicUrl(uploadPath);
+
+      const payload = {
+        title: null,
+        alt_text: deriveAltTextFromFileName(imageFile.name),
+        category: null,
+        sort_order: maxOrder + (index + 1) * 10,
+        is_published: publishNow,
+        image_url: publicUrl,
+        storage_path: uploadPath
+      };
+
+      const { error: insertError } = await supabaseClient.from("gallery_items").insert(payload);
+
+      if (insertError) {
+        await supabaseClient.storage.from(bucketName).remove([uploadPath]);
+        failedCount += 1;
+        failedNames.push(imageFile.name);
+        continue;
+      }
+
+      successCount += 1;
     }
 
     uploadForm.reset();
     updateSelectedFileName();
-    setFeedback("success", "התמונה הועלתה בהצלחה.");
+
+    if (successCount && !failedCount) {
+      setFeedback("success", "הועלו בהצלחה " + successCount + " תמונות.");
+      await loadItems();
+      return;
+    }
+
+    if (successCount && failedCount) {
+      setFeedback(
+        "error",
+        "הועלו " +
+          successCount +
+          " תמונות, ונכשלו " +
+          failedCount +
+          " (" +
+          failedNames.slice(0, 3).join(", ") +
+          (failedNames.length > 3 ? "..." : "") +
+          ")."
+      );
+      await loadItems();
+      return;
+    }
+
+    setFeedback("error", "ההעלאה נכשלה לכל הקבצים.");
     await loadItems();
   }
 

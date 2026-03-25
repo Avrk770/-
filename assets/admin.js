@@ -41,6 +41,9 @@
   const itemsGridHidden = document.getElementById("items-grid-hidden");
   const itemsCountActiveEl = document.getElementById("items-count-active");
   const itemsCountHiddenEl = document.getElementById("items-count-hidden");
+  const orderActions = document.getElementById("order-actions");
+  const orderSaveBtn = document.getElementById("order-save");
+  const orderResetBtn = document.getElementById("order-reset");
 
   let supabaseClient = null;
   let galleryItems = [];
@@ -48,6 +51,8 @@
   let isEditMode = false;
   let isHiddenOpen = false;
   let isSavingOrder = false;
+  let pendingActiveOrderIds = [];
+  let hasUnsavedOrderChanges = false;
   let closeModalTimer = null;
   let dropzoneDragDepth = 0;
 
@@ -177,6 +182,71 @@
     updateSelectionUi();
   }
 
+  function getCurrentActiveIds() {
+    return galleryItems
+      .filter(function (item) {
+        return item.is_published;
+      })
+      .map(function (item) {
+        return item.id;
+      });
+  }
+
+  function updateOrderActionsUi() {
+    const shouldShow = isEditMode && hasUnsavedOrderChanges;
+
+    if (orderActions) {
+      orderActions.classList.toggle("hidden", !shouldShow);
+    }
+
+    if (orderSaveBtn) {
+      orderSaveBtn.disabled = !shouldShow || isSavingOrder;
+    }
+
+    if (orderResetBtn) {
+      orderResetBtn.disabled = !shouldShow || isSavingOrder;
+    }
+  }
+
+  function resetPendingOrderState() {
+    pendingActiveOrderIds = getCurrentActiveIds();
+    hasUnsavedOrderChanges = false;
+    updateOrderActionsUi();
+  }
+
+  function getOrderedActiveItems(items) {
+    const activeItems = items.filter(function (item) {
+      return item.is_published;
+    });
+
+    if (!isEditMode || !pendingActiveOrderIds.length || pendingActiveOrderIds.length !== activeItems.length) {
+      return activeItems;
+    }
+
+    const itemsById = new Map(
+      activeItems.map(function (item) {
+        return [item.id, item];
+      })
+    );
+    const ordered = [];
+
+    pendingActiveOrderIds.forEach(function (id) {
+      const match = itemsById.get(id);
+      if (!match) {
+        return;
+      }
+
+      ordered.push(match);
+      itemsById.delete(id);
+    });
+
+    itemsById.forEach(function (item) {
+      ordered.push(item);
+    });
+
+    return ordered;
+  }
+
   function updateEditUi() {
     if (editToggleBtn) {
       editToggleBtn.textContent = isEditMode ? "סגור עריכה" : "מצב עריכה";
@@ -186,9 +256,13 @@
 
     if (!isEditMode) {
       selectedIds.clear();
+      hasUnsavedOrderChanges = false;
+    } else if (!pendingActiveOrderIds.length) {
+      pendingActiveOrderIds = getCurrentActiveIds();
     }
 
     updateSelectionUi();
+    updateOrderActionsUi();
     renderItems(galleryItems);
   }
 
@@ -319,9 +393,7 @@
   }
 
   function renderItems(items) {
-    const activeItems = items.filter(function (item) {
-      return item.is_published;
-    });
+    const activeItems = getOrderedActiveItems(items);
 
     const hiddenItems = items.filter(function (item) {
       return !item.is_published;
@@ -354,6 +426,7 @@
     }
 
     galleryItems = data || [];
+    resetPendingOrderState();
     renderItems(galleryItems);
   }
 
@@ -853,9 +926,7 @@
       return;
     }
 
-    const activeItems = galleryItems.filter(function (item) {
-      return item.is_published;
-    });
+    const activeItems = getOrderedActiveItems(galleryItems);
     const currentIndex = activeItems.findIndex(function (item) {
       return item.id === itemId;
     });
@@ -877,11 +948,19 @@
       return item.id;
     });
 
-    await persistOrderFromDom(orderedIds);
+    pendingActiveOrderIds = orderedIds;
+
+    const currentActiveIds = getCurrentActiveIds();
+    hasUnsavedOrderChanges = orderedIds.some(function (id, index) {
+      return currentActiveIds[index] !== id;
+    });
+
+    updateOrderActionsUi();
+    renderItems(galleryItems);
   }
 
   async function persistOrderFromDom(orderedIdsFromUi) {
-    if (!isEditMode) {
+    if (!isEditMode || isSavingOrder) {
       return;
     }
 
@@ -908,11 +987,14 @@
       return currentActiveIds[index] !== id;
     });
 
-    if (!hasChanged || isSavingOrder) {
+    if (!hasChanged) {
+      hasUnsavedOrderChanges = false;
+      updateOrderActionsUi();
       return;
     }
 
     isSavingOrder = true;
+    updateOrderActionsUi();
 
     const updates = orderedIds.map(function (id, index) {
       return supabaseClient
@@ -927,6 +1009,7 @@
     });
 
     isSavingOrder = false;
+    updateOrderActionsUi();
 
     if (failedResult) {
       setFeedback("error", "שמירת הסדר נכשלה: " + failedResult.error.message);
@@ -934,8 +1017,28 @@
       return;
     }
 
+    hasUnsavedOrderChanges = false;
+    pendingActiveOrderIds = orderedIds.slice();
+    updateOrderActionsUi();
     setFeedback("success", "סדר התמונות הפעילות נשמר.");
     await loadItems();
+  }
+
+  async function savePendingOrder() {
+    if (!isEditMode || !hasUnsavedOrderChanges) {
+      return;
+    }
+
+    await persistOrderFromDom(pendingActiveOrderIds);
+  }
+
+  function resetPendingOrder() {
+    if (!isEditMode) {
+      return;
+    }
+
+    resetPendingOrderState();
+    renderItems(galleryItems);
   }
 
   function selectAllByState(isPublished) {
@@ -1036,7 +1139,21 @@
     }
 
     editToggleBtn.addEventListener("click", function () {
+      if (isEditMode && hasUnsavedOrderChanges) {
+        const shouldDiscard = window.confirm("יש שינויי סדר שלא נשמרו. לצאת ממצב עריכה ולבטל אותם?");
+        if (!shouldDiscard) {
+          return;
+        }
+      }
+
       isEditMode = !isEditMode;
+
+      if (isEditMode) {
+        resetPendingOrderState();
+      } else {
+        hasUnsavedOrderChanges = false;
+      }
+
       updateEditUi();
     });
 
@@ -1061,6 +1178,12 @@
 
     clearSelectionBtn.addEventListener("click", clearSelection);
     deleteSelectedBtn.addEventListener("click", handleBulkDelete);
+    if (orderSaveBtn) {
+      orderSaveBtn.addEventListener("click", savePendingOrder);
+    }
+    if (orderResetBtn) {
+      orderResetBtn.addEventListener("click", resetPendingOrder);
+    }
 
     supabaseClient.auth.onAuthStateChange(function (_event, session) {
       if (session) {

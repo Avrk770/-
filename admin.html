@@ -292,7 +292,14 @@
               <h3 class="text-base font-semibold">תמונות פעילות באתר</h3>
               <span id="items-count-active" class="text-xs text-on-surface-variant dark:text-white/60">0</span>
             </div>
-            <p class="text-xs text-on-surface-variant dark:text-white/60">במצב עריכה אפשר לשנות מיקום של כל תמונה לפי מספר סדר.</p>
+            <div id="order-actions" class="hidden rounded-xl border border-primary/30 bg-primary/10 dark:bg-primary/15 p-2.5 flex flex-wrap items-center justify-between gap-2">
+              <p class="text-xs text-on-surface-variant dark:text-white/75">בוצע שינוי סדר. לשמירה סופית לחץ ״שמור סדר״.</p>
+              <div class="flex items-center gap-2">
+                <button id="order-reset" type="button" class="rounded-lg border border-outline-variant dark:border-white/20 px-3 py-1.5 text-xs hover:bg-white dark:hover:bg-white/10">בטל שינויים</button>
+                <button id="order-save" type="button" class="rounded-lg bg-primary text-white px-3 py-1.5 text-xs hover:opacity-95">שמור סדר</button>
+              </div>
+            </div>
+            <p class="text-xs text-on-surface-variant dark:text-white/60">במצב עריכה אפשר לשנות מיקום לפי מספר. השינויים נשמרים רק אחרי לחיצה על ״שמור סדר״.</p>
             <div id="items-grid-active" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3"></div>
           </section>
 

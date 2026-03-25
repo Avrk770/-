@@ -6,13 +6,6 @@
     <title>ניהול גלריה | Avremi Kolton</title>
     <meta name="robots" content="noindex, nofollow">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
-      rel="stylesheet"
-    >
-
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
       tailwind.config = {
@@ -28,12 +21,57 @@
               "outline-variant": "#c1c6d6"
             },
             fontFamily: {
-              body: ["Inter"]
+              body: ["FUP Galil", "sans-serif"]
             }
           }
         }
       };
     </script>
+    <style>
+      @font-face {
+        font-family: "FUP Galil";
+        src: url("./assets/fonts/FUP-Galil-Regular.otf") format("opentype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "FUP Galil";
+        src: url("./assets/fonts/FUP-Galil-ExtraBold.otf") format("opentype");
+        font-weight: 800;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      body {
+        font-family: "FUP Galil", sans-serif;
+        font-weight: 400;
+      }
+
+      .text-xs,
+      .text-sm,
+      .text-base,
+      .text-lg {
+        font-weight: 400 !important;
+      }
+
+      .text-xl,
+      .text-2xl,
+      .text-3xl,
+      .text-4xl,
+      .text-5xl,
+      .text-6xl,
+      .text-7xl,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-weight: 800 !important;
+      }
+    </style>
   </head>
 
   <body class="bg-surface text-on-surface font-body min-h-screen">

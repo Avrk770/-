@@ -2,10 +2,6 @@
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <title>אברמי קולטון | תיק עבודות</title>
-<!-- Google Fonts: Inter -->
-<link href="https://fonts.googleapis.com" rel="preconnect">
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -64,9 +60,9 @@
               "on-surface-variant": "#414753"
             },
             fontFamily: {
-              "headline": ["Inter"],
-              "body": ["Inter"],
-              "label": ["Inter"]
+              "headline": ["FUP Galil", "sans-serif"],
+              "body": ["FUP Galil", "sans-serif"],
+              "label": ["FUP Galil", "sans-serif"]
             },
             borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
           },
@@ -74,8 +70,52 @@
       }
     </script>
 <style>
+        @font-face {
+            font-family: "FUP Galil";
+            src: url("./assets/fonts/FUP-Galil-Regular.otf") format("opentype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: "FUP Galil";
+            src: url("./assets/fonts/FUP-Galil-ExtraBold.otf") format("opentype");
+            font-weight: 800;
+            font-style: normal;
+            font-display: swap;
+        }
+
         html {
             scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: "FUP Galil", sans-serif;
+            font-weight: 400;
+        }
+
+        .text-xs,
+        .text-sm,
+        .text-base,
+        .text-lg {
+            font-weight: 400 !important;
+        }
+
+        .text-xl,
+        .text-2xl,
+        .text-3xl,
+        .text-4xl,
+        .text-5xl,
+        .text-6xl,
+        .text-7xl,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 800 !important;
         }
         
         .material-symbols-outlined {
@@ -179,7 +219,7 @@
 <nav class="fixed top-0 w-full z-50 border-b border-black/[0.05] dark:border-white/[0.08]">
 <div class="flex justify-between items-center w-full px-8 py-6 max-w-full mx-auto">
 <!-- Brand Logo -->
-<a class="text-xl font-bold tracking-tighter text-on-surface dark:text-white font-inter relative z-10" href="#" style="">
+<a class="text-xl font-bold tracking-tighter text-on-surface dark:text-white font-body relative z-10" href="#" style="">
                 Avremi Kolton
             </a>
 <!-- Navigation Actions -->
@@ -190,7 +230,7 @@
 <span class="hidden material-symbols-outlined" id="theme-toggle-light-icon" style="">light_mode</span>
 </button>
 <!-- Primary Action -->
-<a class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-inter font-medium tracking-tight hover:opacity-90 transition-all transform active:scale-95 shadow-lg shadow-primary/20" href="https://wa.me/#" style="">
+<a class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-body font-medium tracking-tight hover:opacity-90 transition-all transform active:scale-95 shadow-lg shadow-primary/20" href="https://wa.me/#" style="">
                     WhatsApp
                 </a>
 </div>
@@ -283,7 +323,7 @@
 <!-- Footer -->
 <footer class="bg-surface-container-low dark:bg-[#121212] flex justify-center items-center w-full px-12 py-16 mt-24 border-t border-black/[0.05] dark:border-white/10 transition-colors duration-300">
 <div>
-<span class="text-lg font-bold text-on-surface dark:text-white font-inter tracking-tighter" style="">Avremi Kolton</span>
+<span class="text-lg font-bold text-on-surface dark:text-white font-body tracking-tighter" style="">Avremi Kolton</span>
 </div>
 </footer>
 <!-- Lightbox Modal -->

@@ -73,31 +73,28 @@
         font-weight: 700 !important;
       }
 
-      .gallery-card.dragging {
-        opacity: 0.6;
-        transform: scale(0.98);
+      .gallery-card.sortable-chosen {
+        transform: scale(1.02);
+        box-shadow: 0 18px 36px -20px rgba(0, 0, 0, 0.65);
       }
 
-      .gallery-card.dragging-source {
-        display: none !important;
+      .gallery-card.sortable-ghost {
+        opacity: 0.3;
+        filter: saturate(0.8);
       }
 
-      .gallery-card.drag-over {
-        outline: 2px dashed #0059b5;
-        outline-offset: 4px;
+      .gallery-card.sortable-drag {
+        opacity: 0.98 !important;
+        transform: scale(1.03) rotate(0.3deg);
+        box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.75);
       }
 
-      .drag-placeholder {
-        border: 2px dashed #0071e3;
-        background: rgba(0, 113, 227, 0.1);
-        border-radius: 0.75rem;
-        min-height: 120px;
-        animation: placeholderPulse 1s ease-in-out infinite;
+      .drag-handle {
+        cursor: grab;
       }
 
-      .dark .drag-placeholder {
-        border-color: #4da3ff;
-        background: rgba(77, 163, 255, 0.14);
+      .drag-handle:active {
+        cursor: grabbing;
       }
 
       .dashboard-animate-in {
@@ -205,16 +202,6 @@
         to {
           opacity: 1;
           transform: translateY(0) scale(1);
-        }
-      }
-
-      @keyframes placeholderPulse {
-        0%,
-        100% {
-          opacity: 0.55;
-        }
-        50% {
-          opacity: 0.95;
         }
       }
 
@@ -404,6 +391,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
     <script src="./app-config.js"></script>
     <script src="./assets/admin.js"></script>
     <script>

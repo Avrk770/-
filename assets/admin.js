@@ -50,9 +50,7 @@
   let isSavingOrder = false;
   let closeModalTimer = null;
   let dropzoneDragDepth = 0;
-  let draggedCard = null;
-  let dragPlaceholder = null;
-  let hasDragReordered = false;
+  let sortableInstance = null;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -193,6 +191,46 @@
 
     updateSelectionUi();
     renderItems(galleryItems);
+    syncSortableState();
+  }
+
+  function initSortableReorder() {
+    if (!itemsGridActive || sortableInstance) {
+      return;
+    }
+
+    if (!window.Sortable || typeof window.Sortable.create !== "function") {
+      setFeedback("error", "ספריית הגרירה לא נטענה. בצע רענון קשיח כדי להפעיל שינוי סדר.");
+      return;
+    }
+
+    sortableInstance = window.Sortable.create(itemsGridActive, {
+      animation: 220,
+      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      ghostClass: "sortable-ghost",
+      chosenClass: "sortable-chosen",
+      dragClass: "sortable-drag",
+      draggable: ".gallery-card",
+      handle: ".drag-handle",
+      forceFallback: true,
+      fallbackOnBody: true,
+      swapThreshold: 0.65,
+      disabled: !isEditMode,
+      onEnd: async function () {
+        if (!isEditMode) {
+          return;
+        }
+        await persistOrderFromDom();
+      }
+    });
+  }
+
+  function syncSortableState() {
+    if (!sortableInstance) {
+      return;
+    }
+
+    sortableInstance.option("disabled", !isEditMode);
   }
 
   function updateHiddenSectionUi() {
@@ -270,9 +308,7 @@
         return (
           '<article class="gallery-card rounded-xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden shadow-sm ' +
           (isSelected ? "ring-2 ring-primary" : "") +
-          '" ' +
-          (isEditMode && isActiveSection ? 'draggable="true" ' : "") +
-          'data-id="' +
+          '" data-id="' +
           item.id +
           '" data-storage-path="' +
           storagePath +
@@ -301,7 +337,7 @@
               '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div></div>'
             : "") +
           (isEditMode && isActiveSection
-            ? '<span class="absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>'
+            ? '<span class="drag-handle absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>'
             : "") +
           (isEditMode && isActiveSection
             ? '<span class="absolute top-2 left-11 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
@@ -815,117 +851,6 @@
     }
   }
 
-  function clearDragStates() {
-    if (!itemsGridActive) {
-      return;
-    }
-
-    itemsGridActive.querySelectorAll(".gallery-card").forEach(function (card) {
-      card.classList.remove("drag-over");
-      card.classList.remove("dragging");
-      card.classList.remove("dragging-source");
-    });
-  }
-
-  function ensureDragPlaceholder(referenceCard) {
-    if (!referenceCard) {
-      return null;
-    }
-
-    if (!dragPlaceholder) {
-      dragPlaceholder = document.createElement("div");
-      dragPlaceholder.className = "drag-placeholder";
-      dragPlaceholder.setAttribute("aria-hidden", "true");
-    }
-
-    const rect = referenceCard.getBoundingClientRect();
-    dragPlaceholder.style.height = Math.max(120, Math.round(rect.height)) + "px";
-    return dragPlaceholder;
-  }
-
-  function placeDraggedCardToPlaceholder() {
-    if (!draggedCard || !itemsGridActive) {
-      return;
-    }
-
-    if (dragPlaceholder && dragPlaceholder.parentNode === itemsGridActive) {
-      itemsGridActive.insertBefore(draggedCard, dragPlaceholder);
-      dragPlaceholder.remove();
-    }
-
-    draggedCard.classList.remove("dragging-source");
-    draggedCard.classList.remove("dragging");
-    draggedCard = null;
-    dragPlaceholder = null;
-  }
-
-  function handleDragStart(event) {
-    if (!isEditMode) {
-      return;
-    }
-
-    const card = event.target.closest(".gallery-card");
-    if (!card || !itemsGridActive || !itemsGridActive.contains(card)) {
-      return;
-    }
-
-    draggedCard = card;
-    hasDragReordered = false;
-
-    const placeholder = ensureDragPlaceholder(card);
-    if (placeholder && card.nextSibling !== placeholder) {
-      itemsGridActive.insertBefore(placeholder, card.nextSibling);
-    }
-
-    card.classList.add("dragging");
-    setTimeout(function () {
-      if (draggedCard === card) {
-        card.classList.add("dragging-source");
-      }
-    }, 0);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", card.dataset.id);
-  }
-
-  function handleDragOver(event) {
-    if (!isEditMode || !itemsGridActive) {
-      return;
-    }
-
-    if (!draggedCard || !dragPlaceholder) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const targetCard = event.target.closest(".gallery-card");
-    if (!targetCard || targetCard === draggedCard || targetCard === dragPlaceholder || !itemsGridActive.contains(targetCard)) {
-      if (!targetCard) {
-        itemsGridActive.appendChild(dragPlaceholder);
-        hasDragReordered = true;
-      }
-      return;
-    }
-
-    itemsGridActive.querySelectorAll(".gallery-card.drag-over").forEach(function (card) {
-      card.classList.remove("drag-over");
-    });
-    targetCard.classList.add("drag-over");
-
-    const rect = targetCard.getBoundingClientRect();
-    const before = event.clientY < rect.top + rect.height / 2;
-    const desiredPosition = before ? targetCard : targetCard.nextSibling;
-
-    if (desiredPosition !== dragPlaceholder) {
-      itemsGridActive.insertBefore(dragPlaceholder, desiredPosition);
-      hasDragReordered = true;
-    }
-  }
-
-  function handleDrop(event) {
-    event.preventDefault();
-  }
-
   async function persistOrderFromDom() {
     if (!isEditMode || !itemsGridActive) {
       return;
@@ -979,15 +904,6 @@
 
     setFeedback("success", "סדר התמונות הפעילות נשמר.");
     await loadItems();
-  }
-
-  async function handleDragEnd() {
-    placeDraggedCardToPlaceholder();
-    clearDragStates();
-    if (hasDragReordered) {
-      await persistOrderFromDom();
-    }
-    hasDragReordered = false;
   }
 
   function selectAllByState(isPublished) {
@@ -1099,10 +1015,7 @@
 
     itemsGridActive.addEventListener("click", handleGridClick);
     itemsGridActive.addEventListener("change", handleGridChange);
-    itemsGridActive.addEventListener("dragstart", handleDragStart);
-    itemsGridActive.addEventListener("dragover", handleDragOver);
-    itemsGridActive.addEventListener("drop", handleDrop);
-    itemsGridActive.addEventListener("dragend", handleDragEnd);
+    initSortableReorder();
 
     itemsGridHidden.addEventListener("click", handleGridClick);
     itemsGridHidden.addEventListener("change", handleGridChange);

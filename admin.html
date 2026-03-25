@@ -134,8 +134,21 @@
         background: rgba(0, 89, 181, 0.08);
       }
 
+      .upload-dropzone.drag-active {
+        transform: translateY(-2px);
+        border-style: solid;
+        border-color: #0071e3;
+        background: rgba(0, 113, 227, 0.14);
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+      }
+
       .dark .upload-dropzone.has-files {
         background: rgba(0, 113, 227, 0.16);
+      }
+
+      .dark .upload-dropzone.drag-active {
+        background: rgba(0, 113, 227, 0.2);
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3);
       }
 
       #upload-modal {

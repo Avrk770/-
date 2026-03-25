@@ -49,6 +49,7 @@
   let isHiddenOpen = false;
   let isSavingOrder = false;
   let closeModalTimer = null;
+  let dropzoneDragDepth = 0;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -432,6 +433,37 @@
       uploadSubmitBtn.disabled = false;
       uploadSubmitBtn.textContent = "התחל העלאה (" + fileInput.files.length + ")";
     }
+  }
+
+  function setFilesToInput(files) {
+    if (!fileInput) {
+      return;
+    }
+
+    const transfer = new DataTransfer();
+    files.forEach(function (file) {
+      transfer.items.add(file);
+    });
+    fileInput.files = transfer.files;
+    updateSelectedFileName();
+  }
+
+  function handleDroppedFiles(fileList) {
+    if (!fileList || !fileList.length) {
+      return;
+    }
+
+    const imageFiles = Array.from(fileList).filter(function (file) {
+      return file.type && file.type.startsWith("image/");
+    });
+
+    if (!imageFiles.length) {
+      setFeedback("error", "אפשר לגרור רק קבצי תמונה.");
+      return;
+    }
+
+    setFilesToInput(imageFiles);
+    clearFeedback();
   }
 
   function resetUploadProgress() {
@@ -951,6 +983,36 @@
 
     uploadForm.addEventListener("submit", handleUpload);
     fileInput.addEventListener("change", updateSelectedFileName);
+
+    if (uploadDropzone) {
+      ["dragenter", "dragover"].forEach(function (eventName) {
+        uploadDropzone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          dropzoneDragDepth += 1;
+          uploadDropzone.classList.add("drag-active");
+        });
+      });
+
+      ["dragleave", "dragend"].forEach(function (eventName) {
+        uploadDropzone.addEventListener(eventName, function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          dropzoneDragDepth = Math.max(0, dropzoneDragDepth - 1);
+          if (dropzoneDragDepth === 0) {
+            uploadDropzone.classList.remove("drag-active");
+          }
+        });
+      });
+
+      uploadDropzone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzoneDragDepth = 0;
+        uploadDropzone.classList.remove("drag-active");
+        handleDroppedFiles(event.dataTransfer ? event.dataTransfer.files : []);
+      });
+    }
 
     editToggleBtn.addEventListener("click", function () {
       isEditMode = !isEditMode;

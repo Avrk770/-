@@ -146,7 +146,7 @@
         return (
           '<article class="masonry-item">' +
           '<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">' +
-          '<img class="gallery-image w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="' +
+          '<img class="gallery-image w-full aspect-[4/3] object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="' +
           imageUrl +
           '" alt="' +
           altText +

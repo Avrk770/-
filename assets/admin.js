@@ -263,8 +263,7 @@
         const imageUrl = escapeHtml(item.image_url || "");
         const storagePath = escapeHtml(item.storage_path || "");
         const isSelected = selectedIds.has(item.id);
-        const canMoveUp = isActiveSection && index > 0;
-        const canMoveDown = isActiveSection && index < items.length - 1;
+        const maxPosition = items.length;
 
         return (
           '<article class="gallery-card rounded-xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 overflow-hidden shadow-sm ' +
@@ -297,15 +296,13 @@
               (item.is_published ? "הסתר" : "פרסם") +
               '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div>' +
               (isActiveSection
-                ? '<div class="mt-2 grid grid-cols-2 gap-2"><button type="button" class="move-up rounded-md bg-sky-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-sky-500 ' +
-                  (canMoveUp ? "" : "opacity-40 cursor-not-allowed") +
-                  '" ' +
-                  (canMoveUp ? "" : "disabled") +
-                  '>למעלה</button><button type="button" class="move-down rounded-md bg-sky-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-sky-500 ' +
-                  (canMoveDown ? "" : "opacity-40 cursor-not-allowed") +
-                  '" ' +
-                  (canMoveDown ? "" : "disabled") +
-                  '>למטה</button></div>'
+                ? '<div class="mt-2 flex items-center gap-2 rounded-md bg-white/90 dark:bg-white/15 px-2 py-1.5"><span class="text-[11px] text-slate-800 dark:text-white/90">מיקום</span><input type="number" min="1" max="' +
+                  maxPosition +
+                  '" value="' +
+                  (index + 1) +
+                  '" data-position="' +
+                  (index + 1) +
+                  '" class="move-to-input w-14 rounded-md border border-slate-300/80 dark:border-white/20 bg-white/90 dark:bg-black/20 text-slate-900 dark:text-white text-center text-[11px] px-1 py-0.5"></div>'
                 : "") +
               "</div>"
             : "") +
@@ -779,28 +776,58 @@
     await loadItems();
   }
 
-  function handleGridChange(event) {
-    if (!isEditMode || !event.target.classList.contains("select-item")) {
+  async function handleGridChange(event) {
+    if (!isEditMode) {
       return;
     }
 
-    const itemId = event.target.dataset.id;
-    if (!itemId) {
+    if (event.target.classList.contains("select-item")) {
+      const itemId = event.target.dataset.id;
+      if (!itemId) {
+        return;
+      }
+
+      if (event.target.checked) {
+        selectedIds.add(itemId);
+      } else {
+        selectedIds.delete(itemId);
+      }
+
+      const card = event.target.closest(".gallery-card");
+      if (card) {
+        setCardSelectedClass(card, event.target.checked);
+      }
+
+      updateSelectionUi();
       return;
     }
 
-    if (event.target.checked) {
-      selectedIds.add(itemId);
-    } else {
-      selectedIds.delete(itemId);
-    }
+    if (event.target.classList.contains("move-to-input")) {
+      const card = event.target.closest(".gallery-card");
+      if (!card) {
+        return;
+      }
 
-    const card = event.target.closest(".gallery-card");
-    if (card) {
-      setCardSelectedClass(card, event.target.checked);
-    }
+      const itemId = card.dataset.id;
+      if (!itemId) {
+        return;
+      }
 
-    updateSelectionUi();
+      const max = Math.max(1, Number(event.target.max || 1));
+      const previousPosition = Math.max(1, Number(event.target.dataset.position || 1));
+      let desiredPosition = Number(event.target.value);
+
+      if (!Number.isFinite(desiredPosition)) {
+        desiredPosition = previousPosition;
+      }
+
+      desiredPosition = Math.round(desiredPosition);
+      desiredPosition = Math.max(1, Math.min(max, desiredPosition));
+      event.target.value = String(desiredPosition);
+      event.target.dataset.position = String(desiredPosition);
+
+      await moveActiveItemToPosition(itemId, desiredPosition - 1);
+    }
   }
 
   async function handleGridClick(event) {
@@ -810,16 +837,6 @@
     }
 
     const itemId = card.dataset.id;
-
-    if (event.target.classList.contains("move-up")) {
-      await moveActiveItem(itemId, -1);
-      return;
-    }
-
-    if (event.target.classList.contains("move-down")) {
-      await moveActiveItem(itemId, 1);
-      return;
-    }
 
     if (event.target.classList.contains("toggle-publish")) {
       await togglePublish(itemId);
@@ -831,7 +848,7 @@
     }
   }
 
-  async function moveActiveItem(itemId, direction) {
+  async function moveActiveItemToPosition(itemId, targetIndex) {
     if (!isEditMode || isSavingOrder) {
       return;
     }
@@ -847,14 +864,14 @@
       return;
     }
 
-    const targetIndex = currentIndex + direction;
-    if (targetIndex < 0 || targetIndex >= activeItems.length) {
+    const safeTargetIndex = Math.max(0, Math.min(activeItems.length - 1, targetIndex));
+    if (safeTargetIndex === currentIndex) {
       return;
     }
 
     const movedItem = activeItems[currentIndex];
     activeItems.splice(currentIndex, 1);
-    activeItems.splice(targetIndex, 0, movedItem);
+    activeItems.splice(safeTargetIndex, 0, movedItem);
 
     const orderedIds = activeItems.map(function (item) {
       return item.id;

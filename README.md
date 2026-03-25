@@ -33,7 +33,7 @@ python3 -m http.server 8080
 
 ואז:
 - אתר: `http://localhost:8080/index.html`
-- ניהול: `http://localhost:8080/[private-admin-path].html`
+- ניהול: `http://localhost:8080/admin.com`
 
 ## 3. העלאה לאוויר
 
@@ -67,7 +67,7 @@ python3 -m http.server 8080
 
 ## 5. ניהול המדיה בגלריה
 
-1. כנס לנתיב הניהול הפרטי שלך.
+1. כנס ל-`/admin.com`.
 2. התחבר עם משתמש האדמין.
 3. העלה תמונות + כותרת/alt/קטגוריה + סדר תצוגה.
 4. ערוך או מחק פריטים מהטבלה.

@@ -1,10 +1,16 @@
 [[headers]]
-  for = "/studio-admin-9k4m2x.html"
+  for = "/admin.com"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
 
 [[redirects]]
   from = "/admin.html"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/studio-admin-9k4m2x.html"
   to = "/"
   status = 302
   force = true

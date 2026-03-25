@@ -4,7 +4,7 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/studio-admin-9k4m2x.html",
+      "source": "/admin.com",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -16,6 +16,11 @@
   "redirects": [
     {
       "source": "/admin.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/studio-admin-9k4m2x.html",
       "destination": "/",
       "permanent": false
     },

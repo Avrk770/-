@@ -1,0 +1,448 @@
+<!DOCTYPE html><html class="light" dir="rtl" lang="he"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>אברמי קולטון | תיק עבודות</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-container": "#0071e3",
+              "secondary-fixed-dim": "#c8c6c8",
+              "inverse-primary": "#abc7ff",
+              "on-tertiary-fixed": "#1a1b1f",
+              "inverse-on-surface": "#f0f0f2",
+              "outline-variant": "#c1c6d6",
+              "background": "#f9f9fb",
+              "on-primary-fixed": "#001b3f",
+              "on-error": "#ffffff",
+              "tertiary-container": "#737378",
+              "surface-bright": "#f9f9fb",
+              "tertiary": "#5a5b5f",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f3f3f5",
+              "on-primary-fixed-variant": "#00458f",
+              "secondary-container": "#e2dfe1",
+              "primary": "#0059b5",
+              "surface-container-highest": "#e2e2e4",
+              "on-tertiary-fixed-variant": "#46464b",
+              "primary-fixed-dim": "#abc7ff",
+              "secondary-fixed": "#e4e2e4",
+              "inverse-surface": "#2f3132",
+              "tertiary-fixed-dim": "#c7c6cb",
+              "on-secondary-fixed": "#1b1b1d",
+              "surface": "#f9f9fb",
+              "on-secondary-fixed-variant": "#474649",
+              "on-secondary": "#ffffff",
+              "on-surface": "#1a1c1d",
+              "surface-container": "#eeeef0",
+              "surface-tint": "#005cbb",
+              "tertiary-fixed": "#e3e2e7",
+              "on-primary-container": "#fcfbff",
+              "primary-fixed": "#d7e2ff",
+              "surface-dim": "#d9dadc",
+              "on-tertiary": "#ffffff",
+              "surface-variant": "#e2e2e4",
+              "surface-container-high": "#e8e8ea",
+              "on-tertiary-container": "#fcfaff",
+              "on-background": "#1a1c1d",
+              "surface-container-lowest": "#ffffff",
+              "on-error-container": "#93000a",
+              "on-secondary-container": "#636264",
+              "error": "#ba1a1a",
+              "secondary": "#5f5e60",
+              "outline": "#717785",
+              "on-primary": "#ffffff",
+              "on-surface-variant": "#414753"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        /* Editorial Masonry using CSS Columns */
+        .masonry-grid {
+            column-count: 2;
+            column-gap: 1.5rem;
+        }
+        @media (min-width: 1024px) {
+            .masonry-grid {
+                column-count: 4;
+                column-gap: 2rem;
+            }
+        }
+        
+        /* Staggered Entrance Animations */
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .masonry-item.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (min-width: 1024px) {
+            .masonry-item {
+                margin-bottom: 2rem;
+            }
+        }
+
+        /* Hover lifting effect */
+        .portfolio-card {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                        box-shadow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .portfolio-card:hover {
+            transform: scale(1.05) translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .dark .portfolio-card:hover {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Lightbox zoom-in effect */
+        #lightbox-modal {
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #lightbox-img {
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+        }
+
+        /* Smooth theme transition */
+        body, nav, footer, main, h1, span, a, button {
+            transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* Enhanced Glassmorphism Header */
+        nav {
+            background-color: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+        }
+        .dark nav {
+            background-color: rgba(18, 18, 18, 0.6);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+        }
+    </style>
+<script>
+        (function() {
+            const savedTheme = localStorage.getItem('color-theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+</head>
+<body class="bg-surface dark:bg-[#121212] text-on-surface dark:text-[#f0f0f2] font-body selection:bg-primary/10 transition-colors duration-300" style="">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 border-b border-black/[0.05] dark:border-white/[0.08]">
+<div class="flex justify-between items-center w-full px-8 py-6 max-w-full mx-auto">
+<!-- Brand Logo -->
+<a class="text-xl font-bold tracking-tighter text-on-surface dark:text-white font-inter relative z-10" href="#" style="">
+                Avremi Kolton
+            </a>
+<!-- Navigation Actions -->
+<div class="flex items-center gap-4 md:gap-8 relative z-10">
+<!-- Dark Mode Toggle -->
+<button aria-label="Toggle Dark Mode" class="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-on-surface-variant dark:text-white flex items-center justify-center" id="theme-toggle" style="">
+<span class="material-symbols-outlined" id="theme-toggle-dark-icon" style="">dark_mode</span>
+<span class="hidden material-symbols-outlined" id="theme-toggle-light-icon" style="">light_mode</span>
+</button>
+<!-- Primary Action -->
+<a class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-inter font-medium tracking-tight hover:opacity-90 transition-all transform active:scale-95 shadow-lg shadow-primary/20" href="https://wa.me/#" style="">
+                    WhatsApp
+                </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-32 pb-24 px-8 lg:px-12 max-w-[1920px] mx-auto">
+<!-- Subtle Editorial Eyebrow -->
+<div class="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-8">
+<h1 class="text-display-lg text-4xl md:text-7xl font-extrabold tracking-tighter leading-none dark:text-white" style="">
+                העבודות <span class="text-primary italic" style="">שלי</span>
+</h1>
+</div>
+<!-- Masonry Portfolio Gallery -->
+<div class="masonry-grid" id="masonry-grid">
+<!-- Item 1 -->
+<div class="masonry-item reveal" style="transition-delay: 0ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Editorial Design" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzhr8C-1kwzoO1fvNz0XT80NbBm6_b5c2QSE6uf3MZpYz0gjyv_cXjuFH6mW6J8jgU9wnGhcjiP1ZKYgBfYmTYoCkxCjW62DVQ9746Oi0Pb4rNzIfy3Xd4XPH7nI16ujxDW7MhpPbuoTGAw_h6apqkxWgkhtyyEvd2oGJtQs1ZdYPhGSUnw8Ak9f7lKpiADH3j1m2BKWCOf7OzA8GhtVf6XAahdH6gjXPAVFtP1ZsfyxH3c0gHKpbvQURCCPC-TFnRXXo_3djuAdk" style="">
+</div>
+</div>
+<!-- Item 2 -->
+<div class="masonry-item reveal" style="transition-delay: 150ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Identity Design" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBevWIoxydqL4R8qtvLrd3vqT5_AeOquaq7qa9OleMVTKFQKx6C9UXN8UD84fSDU1vYnnnMxGUjB9r3nIkpitigfGcqZ-K_9FIzbMwUh2q4XnfignGgu06pvTS6Afrg2W_Ul1qtPj9nAeQUvCFEL0aAlZFaKcwJvTtHXXXKsZyK4FynUv6twRwZOGoVyZ0zT7v3jCLIr4I4nrG8ikrItNEVVI4i08iozCPTKEGLStpliEfxoxZtNO57awwybKHF94UbAKNqY_1dzEg" style="">
+</div>
+</div>
+<!-- Item 3 -->
+<div class="masonry-item reveal" style="transition-delay: 300ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Advertisement" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7IIZE4s-eTM8MxOz1fVGzxt2sOwV7eNL0AOW5RCfpOZD85WCrh_SfxlO08WkjcZ2zu3VrozOxNoVadGvr9e8Sisu5CTss_Q7C36QX9KRUgs8JptenNaVF39DF5Dy4H_VPiHs96Eg9JtOsQYs6mRDuBrEM02-W5ZjnzdhfFtVBqb963QPmnsD__9WlC4BRUF39aXyD8eCeS7_ICUtWRYBu7KAnMli784AyxalJGyHFPYdHJCwx-CGJwHeyDoECapcgFP2RxlHEAm0" style="">
+</div>
+</div>
+<!-- Item 4 -->
+<div class="masonry-item reveal" style="transition-delay: 450ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Stationery Design" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz1uaetV_ujy2wM2lGtnL3fysXJ77HEJk8xCMg0wBybf9v44LUgQCN93vg16gnmg792vLY5iIXBrrpawbWdlD8QmaaSW5T2Uays4Vssm4DfG-bviGRdkXaOcX3Uk7LcLZog_oQ2Khm6sNbNjFS67zdRpUHHWHu3cD_2cs9EFgcTh9VGbQVELI053QjtxQeHNGZR_0LuLIQe48tY5_5Z0_R2DQQ3VZy8iXpH18Er_kPPsnc7maGTLvjRCleFj5sRAUx-P_e9jdwWcs" style="">
+</div>
+</div>
+<!-- Item 5 -->
+<div class="masonry-item reveal" style="transition-delay: 0ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Packaging" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbzEr1sStiFu6YOWp0Ag42VMGPY7gsDjyrVIo_ZFh44N8YkJtRO9aZ6ROs-eciWps94AE1ltuOgIr11NaEhM8QFcWS7mRqk6BmgMMDBukwG7iul4RnWiCl58Ru0qSCxROygS7o-lQCsASV7FFVoBq91BRuIrY4nxa1IPCvm7MhyhcYos3aXRk2iJBmvA7kdr5BMEonUrO7Pv9pJmY6fUKCchBXxXplQFC28P5dWdZrRyi-BlcE7wSFO5X1zS2Kq3stS3no6-iu0Qg" style="">
+</div>
+</div>
+<!-- Item 6 -->
+<div class="masonry-item reveal" style="transition-delay: 150ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Typography Art" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4LbaCHymOYOtKqBTaJE3k9hBBGPwUkBWBk8ibBaQgbH6s9Y8Tgtp7QG4ZzSho_w8G9wGnv7hXfsRJv-dS28j6ynB4RF6dYQJ1_OjLUd0zEoyQuZZ7BfiRJhiZe4VRrTBU0UOXkMJuqrfI5J57RPru-zhn_RQHXCEWMa4kfmbNe8GzN2Go93-bb7cQd4Px3mSKwUJl0JYbwSRD6lg7K-_wYCsLlIedOvVs9k2EP0BDH4otBIYhlP2kumKled9sTcKwyCLzvVNF8GY" style="">
+</div>
+</div>
+<!-- Item 7 -->
+<div class="masonry-item reveal" style="transition-delay: 300ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Brand Manual" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy5Fq3eXDXHfXXlAt2gUhl4QWZ1MZ6_N98HI65xQRsrd7pyaXduU7QGT29onLBByuYr3JizyGk1_3T_b3N4v5fVCWcraqBWgAKiMYdleFIifZ90DzHpcadsJhTCXeeM7oqRjxrda77pa8mrEZEjPcH2UUh1QAm-24Kotw6cNcqkOI7FsR_BfGCdLuqPMCCQO11xSTerXCFyCJzC1dOZjXpBSihQB83N0f3MD5E9cc3dJlj5o_8h5r_iRI0aEtgh1pFlGDOROY8Abo" style="">
+</div>
+</div>
+<!-- Item 8 -->
+<div class="masonry-item reveal" style="transition-delay: 450ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Signage" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqqe4xQHiiokBxTTrC6-FCOL67AZHDLL6hTMTujxLBHrYL8UyMzSCdxrgUnirCtmvevPKdJfLWF4gHXpGdLEhRRLyLBj08wSXw_DuLmyLkYvYA9KgiOwtUyEp0rxL-YzaFocpdVLYawYlr6zhD3mBOr74qu2AgO5-3dhoRwwDYjngPSoq4vOnHfUY8U43OrQ92n43ICnLctOdFOLCdu6HxMDZCmB-wm84PfOtTxZkW2yxQ0LLa1FAxRCg1qdYEwhUadWEB7zZvST4" style="">
+</div>
+</div>
+<!-- Item 9 -->
+<div class="masonry-item reveal" style="transition-delay: 0ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Digital Design" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4OXlsgP_anqBWXcDJI3WywAFRsP2JxLq9EsfXuOQrv7CX_XuZgAuSGc5XJlKE6qx_3wSw2S7kfN1Eu3onUXNHbRn9AuXQiN10Y1Wa30xSGGYuWqWwzte3H2iFfPLzp5_Vf3qdJoduZxRLsYr64ZAmWJ7jCtmiRCEOHr6MGXYwuVOA9c3FgXw164onA0-ZSLYhC9NdytZtnzsIc-BpHYuutUXTzn8OliYM9vjAuL2mscyt047kyBMsqxE6XpxzvFQdm7XuVN1aIJM" style="">
+</div>
+</div>
+<!-- Item 10 -->
+<div class="masonry-item reveal" style="transition-delay: 150ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Print Collateral" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1PcsDNhfBnoXPZpictSH5yi2DmrOO0l5dOvi5iwIDk9nGpEVUjM1XE1dgYDITAgv6tjFyz_w5kye4vjoxrPinE8Becfx9TOGwtCb3B_nZbWYp8Cr1MOgoFp8F9Un7J4M4WkYv7Es-rjlt_9KhHjv0cYbCT2OoVARYMZscwSvDC9KmdhPozBozMheuOvhCKgwWE6L1QAjEBEVRrV9NnxGHpXjC0PctLJQmR5PtWRJWEeNtjSpl0nnQiL9Eh_9u-tKCoWuowCbn1pI" style="">
+</div>
+</div>
+<!-- Item 11 -->
+<div class="masonry-item reveal" style="transition-delay: 300ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Logo Macro" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBETVwJEFdGrPLYSqeN-okA7aTRDlaMzL6xHihwSR5xe9THZ8tnYlKY-33axRrBrjugJoO7ZHL52OHZNq77Pv4MnE8WiWTJjr2CfMvpYGkQW96YGqER5h-ZJm160ZD2cmBUIhyrCZiPaZXnh33awm2O136EfJhwN0-aum15BQP6oQv4nbHA-qDBW8FFBjZeiBubibZm8AiT_ScmOkTsp1_QRHuXSJztgZp9vEz2nwqoNZJAl3TgV8IGFZBDHDFlYTFnJKKF3UcubZI" style="">
+</div>
+</div>
+<!-- Item 12 -->
+<div class="masonry-item reveal" style="transition-delay: 450ms;">
+<div class="portfolio-card rounded-2xl overflow-hidden bg-surface-container-low dark:bg-white/5 group cursor-pointer border border-black/[0.03] dark:border-white/5">
+<img alt="Outdoor Advertising" class="w-full h-auto object-cover transition-transform duration-700 ease-out group-hover:brightness-90 cursor-zoom-in" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVzsQsadgHfoHadnIQa6w3R6iq9tANlzNFviRNZeQetbZQa7sbH2l4r4vUfnn6THOaEDQfpLsT_3XjTTURTpCPhZpilaN57-zKHpo1hfBfEBwN1ksTHZUXHdUTDmhpWWfjEz15e_N4nFXZxPZCrb8LUSTrbtMH2l8hIkfR7WU-wG0HPdPQmip8EdNa74S7l3bdaPtNeVtS4kjIJR0qsOZ8O7820f1wEcf5BU_YXcpEKAEvuYPr4xvdl-AnZJv2O-5yhd4o1DTQQfU" style="">
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-[#121212] flex justify-center items-center w-full px-12 py-16 mt-24 border-t border-black/[0.05] dark:border-white/10 transition-colors duration-300">
+<div>
+<span class="text-lg font-bold text-on-surface dark:text-white font-inter tracking-tighter" style="">Avremi Kolton</span>
+</div>
+</footer>
+<!-- Lightbox Modal -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-2xl transition-opacity duration-400 opacity-0 hidden" id="lightbox-modal">
+<button class="absolute top-8 left-8 text-white hover:text-primary transition-colors p-2 z-[110]" id="close-lightbox" style="">
+<span class="material-symbols-outlined text-4xl" style="">close</span>
+</button>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4 z-[110] group md:block" id="prev-lightbox" style="">
+<span class="material-symbols-outlined text-5xl" style="">chevron_right</span>
+</button>
+<button class="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors p-4 z-[110] group md:block" id="next-lightbox" style="">
+<span class="material-symbols-outlined text-5xl" style="">chevron_left</span>
+</button>
+<div class="max-w-5xl max-h-[90vh] p-4 relative flex items-center justify-center">
+<img alt="Enlarged view" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl scale-90 opacity-0 transition-all duration-500" id="lightbox-img" src="" style="opacity: 0; transform: scale(0.9);">
+</div>
+</div>
+<script>
+        const modal = document.getElementById('lightbox-modal');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const closeBtn = document.getElementById('close-lightbox');
+        const prevBtn = document.getElementById('prev-lightbox');
+        const nextBtn = document.getElementById('next-lightbox');
+        const galleryImages = Array.from(document.querySelectorAll('.masonry-item img'));
+        let currentIndex = 0;
+
+        // Reveal on scroll logic
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('reveal');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.masonry-item').forEach((item, i) => {
+            // Calculate delay based on position for a staggered effect
+            const delay = (i % 4) * 150;
+            item.style.transitionDelay = `${delay}ms`;
+            observer.observe(item);
+        });
+
+        function openLightbox(index) {
+            currentIndex = index;
+            modal.classList.remove('hidden');
+            
+            // Trigger animation
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                updateLightboxContent(true);
+            }, 10);
+            
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxContent(isInitial = false) {
+            if (!isInitial) {
+                lightboxImg.style.opacity = '0';
+                lightboxImg.style.transform = 'scale(0.95)';
+            }
+            
+            setTimeout(() => {
+                lightboxImg.src = galleryImages[currentIndex].src;
+                lightboxImg.onload = () => {
+                    lightboxImg.style.opacity = '1';
+                    lightboxImg.style.transform = 'scale(1)';
+                };
+            }, isInitial ? 50 : 200);
+        }
+
+        function closeLightbox() {
+            modal.classList.remove('opacity-100');
+            lightboxImg.style.transform = 'scale(0.9)';
+            lightboxImg.style.opacity = '0';
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                lightboxImg.src = '';
+            }, 400);
+            document.body.style.overflow = '';
+        }
+
+        function showNext() {
+            currentIndex = (currentIndex + 1) % galleryImages.length;
+            updateLightboxContent();
+        }
+
+        function showPrev() {
+            currentIndex = (currentIndex - 1 + galleryImages.length) % galleryImages.length;
+            updateLightboxContent();
+        }
+
+        galleryImages.forEach((img, index) => {
+            img.classList.add('cursor-zoom-in');
+            img.addEventListener('click', () => openLightbox(index));
+        });
+
+        closeBtn.addEventListener('click', closeLightbox);
+        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); showNext(); });
+        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); showPrev(); });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target.closest('button') === closeBtn) {
+                closeLightbox();
+            }
+        });
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('hidden')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') showPrev(); 
+            if (e.key === 'ArrowLeft') showNext();  
+        });
+
+        // Touch/Swipe Support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        modal.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+        modal.addEventListener('touchend', (e) => { touchEndX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
+
+        function handleSwipe() {
+            const threshold = 50;
+            if (touchEndX < touchStartX - threshold) showNext();
+            if (touchEndX > touchStartX + threshold) showPrev();
+        }
+
+        // Dark Mode Logic
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+
+        function updateIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            }
+        }
+
+        updateIcons();
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+            updateIcons();
+        });
+    </script>
+</body></html>

@@ -120,7 +120,7 @@
     }
 
     if (!data || data.length === 0) {
-      setStatus("הגלריה עדיין ריקה. העלה מדיה דרך admin.html.");
+      setStatus("הגלריה עדיין ריקה.");
       return [];
     }
 
@@ -150,7 +150,7 @@
           imageUrl +
           '" alt="' +
           altText +
-          '" data-index="' +
+          '" draggable="false" data-index="' +
           index +
           '">' +
           (title
@@ -359,10 +359,39 @@
     whatsappLink.textContent = "Contact";
   }
 
+  function initMediaProtection() {
+    document.addEventListener("contextmenu", function (event) {
+      if (event.target.closest("img")) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener("dragstart", function (event) {
+      if (event.target.closest("img")) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener("keydown", function (event) {
+      const key = event.key.toLowerCase();
+      const blocked =
+        (event.metaKey && key === "s") ||
+        (event.ctrlKey && key === "s") ||
+        (event.metaKey && event.altKey && key === "i") ||
+        (event.ctrlKey && event.shiftKey && key === "i") ||
+        key === "f12";
+
+      if (blocked) {
+        event.preventDefault();
+      }
+    });
+  }
+
   async function init() {
     initThemeToggle();
     initLightboxControls();
     initWhatsappCta();
+    initMediaProtection();
 
     const items = await fetchGalleryItems();
     renderGallery(items);

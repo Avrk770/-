@@ -1,14 +1,39 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
-      "source": "/admin.html",
+      "source": "/studio-admin-9k4m2x.html",
       "headers": [
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/admin.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.avremikolton.com"
+        }
+      ],
+      "destination": "https://avremikolton.com/:path*",
+      "permanent": true
     }
   ]
 }

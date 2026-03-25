@@ -103,6 +103,12 @@
         font-weight: 400;
       }
 
+      img {
+        -webkit-user-drag: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+
       .text-xs,
       .text-sm,
       .text-base,
@@ -238,15 +244,9 @@
   <body class="bg-surface dark:bg-[#121212] text-on-surface dark:text-[#f0f0f2] font-body selection:bg-primary/10">
     <nav class="fixed top-0 w-full z-50 border-b border-black/[0.05] dark:border-white/[0.08]">
       <div class="flex justify-between items-center w-full px-6 py-5 md:px-8 max-w-full mx-auto">
-        <a class="text-xl font-bold tracking-tighter text-on-surface dark:text-white" href="#">Avremi Kolton</a>
+        <a class="text-xl font-bold tracking-tighter text-on-surface dark:text-white" href="/">Avremi Kolton</a>
 
         <div class="flex items-center gap-3 md:gap-6">
-          <a
-            href="./admin.html"
-            class="text-sm md:text-base text-on-surface-variant dark:text-white/70 hover:text-primary transition-colors"
-            >ניהול</a
-          >
-
           <button
             aria-label="Toggle dark mode"
             id="theme-toggle"
@@ -259,6 +259,8 @@
           <a
             id="whatsapp-link"
             href="https://wa.me/"
+            target="_blank"
+            rel="noopener noreferrer"
             class="bg-primary text-on-primary px-5 py-2.5 rounded-full font-medium tracking-tight hover:opacity-90 transition-all transform active:scale-95 shadow-lg shadow-primary/20"
             >WhatsApp</a
           >
@@ -269,7 +271,7 @@
     <main class="pt-28 pb-24 px-6 lg:px-12 max-w-[1920px] mx-auto">
       <div class="mb-12 md:mb-20 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <h1 class="text-4xl md:text-7xl font-extrabold tracking-tighter leading-none dark:text-white">
-          העבודות <span class="text-primary italic">שלי</span>
+          העבודות <span class="text-primary">שלי</span>
         </h1>
 
         <p id="gallery-status" class="text-sm md:text-base text-on-surface-variant dark:text-white/60"></p>

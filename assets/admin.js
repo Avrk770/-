@@ -212,10 +212,25 @@
       dragClass: "sortable-drag",
       draggable: ".gallery-card",
       handle: ".drag-handle",
-      forceFallback: true,
-      fallbackOnBody: true,
-      swapThreshold: 0.65,
+      forceFallback: false,
+      fallbackOnBody: false,
+      swapThreshold: 1,
+      invertSwap: true,
+      invertedSwapThreshold: 1,
+      emptyInsertThreshold: 24,
+      direction: "horizontal",
+      fallbackTolerance: 3,
       disabled: !isEditMode,
+      onMove: function (evt, originalEvent) {
+        if (!evt.related && evt.to) {
+          const rect = evt.to.getBoundingClientRect();
+          if (originalEvent && originalEvent.clientY < rect.top + rect.height * 0.25) {
+            evt.to.insertBefore(evt.dragged, evt.to.firstElementChild);
+          } else if (originalEvent && originalEvent.clientY > rect.bottom - rect.height * 0.25) {
+            evt.to.appendChild(evt.dragged);
+          }
+        }
+      },
       onEnd: async function () {
         if (!isEditMode) {
           return;

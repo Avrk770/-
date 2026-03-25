@@ -321,16 +321,28 @@
     }
 
     if (!fileInput.files || !fileInput.files.length) {
-      selectedFileName.textContent = "לא נבחרו קבצים";
+      selectedFileName.textContent = "לא נבחרו קבצים עדיין";
+      if (uploadSubmitBtn) {
+        uploadSubmitBtn.disabled = true;
+        uploadSubmitBtn.textContent = "התחל העלאה";
+      }
       return;
     }
 
     if (fileInput.files.length === 1) {
       selectedFileName.textContent = fileInput.files[0].name;
+      if (uploadSubmitBtn) {
+        uploadSubmitBtn.disabled = false;
+        uploadSubmitBtn.textContent = "התחל העלאה (1)";
+      }
       return;
     }
 
     selectedFileName.textContent = "נבחרו " + fileInput.files.length + " קבצים";
+    if (uploadSubmitBtn) {
+      uploadSubmitBtn.disabled = false;
+      uploadSubmitBtn.textContent = "התחל העלאה (" + fileInput.files.length + ")";
+    }
   }
 
   function resetUploadProgress() {
@@ -465,7 +477,7 @@
       if (uploadSubmitBtn) {
         uploadSubmitBtn.disabled = false;
         uploadSubmitBtn.classList.remove("opacity-70", "cursor-not-allowed");
-        uploadSubmitBtn.textContent = "העלה תמונות";
+        uploadSubmitBtn.textContent = "התחל העלאה";
       }
     }
 

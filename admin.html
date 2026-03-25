@@ -83,6 +83,101 @@
         outline-offset: 4px;
       }
 
+      .dashboard-animate-in {
+        animation: dashboardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .dashboard-animate-in-delayed {
+        animation: dashboardFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation-delay: 0.08s;
+      }
+
+      .gallery-card {
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        animation: cardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .gallery-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 32px -18px rgba(0, 0, 0, 0.45);
+      }
+
+      button,
+      a {
+        transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+      }
+
+      button:active,
+      a:active {
+        transform: scale(0.98);
+      }
+
+      .upload-dropzone {
+        border: 1.5px dashed rgba(113, 119, 133, 0.7);
+        background: rgba(255, 255, 255, 0.7);
+        transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .dark .upload-dropzone {
+        border-color: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .upload-dropzone:hover {
+        transform: translateY(-1px);
+        border-color: #0059b5;
+      }
+
+      .upload-dropzone.has-files {
+        border-style: solid;
+        border-color: #0059b5;
+        background: rgba(0, 89, 181, 0.08);
+      }
+
+      .dark .upload-dropzone.has-files {
+        background: rgba(0, 113, 227, 0.16);
+      }
+
+      #upload-modal {
+        transition: opacity 0.25s ease;
+      }
+
+      #upload-modal-panel {
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+      }
+
+      #upload-modal.modal-open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #upload-modal.modal-open #upload-modal-panel {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      @keyframes dashboardFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes cardFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
       body,
       header,
       section,
@@ -142,7 +237,7 @@
 
       <div id="feedback" class="hidden"></div>
 
-      <section id="auth-state" class="rounded-2xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 p-6 max-w-xl">
+      <section id="auth-state" class="dashboard-animate-in rounded-2xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 p-6 max-w-xl">
         <h2 class="text-xl font-semibold mb-4">כניסה לניהול</h2>
 
         <form id="login-form" class="space-y-4">
@@ -171,7 +266,7 @@
       </section>
 
       <section id="dashboard-state" class="hidden space-y-4">
-        <article class="rounded-2xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 p-4 space-y-4">
+        <article class="dashboard-animate-in rounded-2xl border border-outline-variant dark:border-white/10 bg-white dark:bg-white/5 p-4 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-lg font-semibold">תמונות בגלריה</h2>
             <div class="flex flex-wrap items-center gap-2">
@@ -213,8 +308,8 @@
         </article>
       </section>
 
-      <div id="upload-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm p-4">
-        <div class="max-w-xl mx-auto bg-white dark:bg-[#121212] rounded-2xl border border-outline-variant dark:border-white/10 p-5 mt-20 shadow-xl shadow-black/20">
+      <div id="upload-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm p-4 opacity-0 pointer-events-none">
+        <div id="upload-modal-panel" class="max-w-xl mx-auto bg-white dark:bg-[#121212] rounded-2xl border border-outline-variant dark:border-white/10 p-5 mt-20 shadow-xl shadow-black/20 opacity-0 translate-y-3 scale-[0.98]">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">העלאת תמונות</h3>
             <button id="upload-close" type="button" class="rounded-lg border border-outline-variant dark:border-white/15 px-3 py-1.5 text-sm hover:bg-surface-container-low dark:hover:bg-white/10">סגור</button>
@@ -224,10 +319,15 @@
             <p class="text-xs text-on-surface-variant dark:text-white/60">1. בחר קבצים 2. העלה אותם לגלריה</p>
             <div class="flex flex-col gap-2">
               <label
+                id="upload-dropzone"
                 for="image_file"
-                class="inline-flex items-center justify-center rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-800 transition-colors"
+                class="upload-dropzone inline-flex flex-col items-center justify-center rounded-xl px-4 py-5 text-sm cursor-pointer"
               >
-                בחירת קבצים
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6 mb-2 opacity-80" fill="currentColor" aria-hidden="true">
+                  <path d="M12 3a1 1 0 0 1 1 1v8.59l2.3-2.29a1 1 0 1 1 1.4 1.41l-4 3.99a1 1 0 0 1-1.4 0l-4-3.99a1 1 0 0 1 1.4-1.41L11 12.59V4a1 1 0 0 1 1-1zM5 19a1 1 0 0 0 0 2h14a1 1 0 1 0 0-2H5z"/>
+                </svg>
+                <span class="font-medium">בחר קבצים להעלאה</span>
+                <span class="text-xs text-on-surface-variant dark:text-white/60 mt-1">אפשר לבחור כמה תמונות ביחד</span>
               </label>
               <input id="image_file" name="image_file" type="file" accept="image/*" multiple required class="hidden">
               <span id="selected-file-name" class="text-sm text-on-surface-variant dark:text-white/60">לא נבחרו קבצים עדיין</span>

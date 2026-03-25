@@ -13,9 +13,11 @@
 
   const uploadOpenBtn = document.getElementById("upload-open");
   const uploadModal = document.getElementById("upload-modal");
+  const uploadModalPanel = document.getElementById("upload-modal-panel");
   const uploadCloseBtn = document.getElementById("upload-close");
   const uploadForm = document.getElementById("upload-form");
   const fileInput = document.getElementById("image_file");
+  const uploadDropzone = document.getElementById("upload-dropzone");
   const selectedFileName = document.getElementById("selected-file-name");
   const uploadSubmitBtn = document.getElementById("upload-submit");
   const uploadProgressWrap = document.getElementById("upload-progress-wrap");
@@ -46,6 +48,7 @@
   let isEditMode = false;
   let isHiddenOpen = false;
   let isSavingOrder = false;
+  let closeModalTimer = null;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -187,8 +190,19 @@
       return;
     }
 
+    if (closeModalTimer) {
+      clearTimeout(closeModalTimer);
+      closeModalTimer = null;
+    }
+
     resetUploadProgress();
     uploadModal.classList.remove("hidden");
+    requestAnimationFrame(function () {
+      uploadModal.classList.add("modal-open");
+      if (uploadModalPanel) {
+        uploadModalPanel.classList.remove("opacity-0", "translate-y-3", "scale-[0.98]");
+      }
+    });
   }
 
   function closeUploadModal() {
@@ -197,7 +211,15 @@
     }
 
     resetUploadProgress();
-    uploadModal.classList.add("hidden");
+    uploadModal.classList.remove("modal-open");
+    if (uploadModalPanel) {
+      uploadModalPanel.classList.add("opacity-0", "translate-y-3", "scale-[0.98]");
+    }
+
+    closeModalTimer = setTimeout(function () {
+      uploadModal.classList.add("hidden");
+      closeModalTimer = null;
+    }, 260);
   }
 
   function finishUploadProgress() {
@@ -380,6 +402,9 @@
 
     if (!fileInput.files || !fileInput.files.length) {
       selectedFileName.textContent = "לא נבחרו קבצים עדיין";
+      if (uploadDropzone) {
+        uploadDropzone.classList.remove("has-files");
+      }
       if (uploadSubmitBtn) {
         uploadSubmitBtn.disabled = true;
         uploadSubmitBtn.textContent = "התחל העלאה";
@@ -389,6 +414,9 @@
 
     if (fileInput.files.length === 1) {
       selectedFileName.textContent = fileInput.files[0].name;
+      if (uploadDropzone) {
+        uploadDropzone.classList.add("has-files");
+      }
       if (uploadSubmitBtn) {
         uploadSubmitBtn.disabled = false;
         uploadSubmitBtn.textContent = "התחל העלאה (1)";
@@ -397,6 +425,9 @@
     }
 
     selectedFileName.textContent = "נבחרו " + fileInput.files.length + " קבצים";
+    if (uploadDropzone) {
+      uploadDropzone.classList.add("has-files");
+    }
     if (uploadSubmitBtn) {
       uploadSubmitBtn.disabled = false;
       uploadSubmitBtn.textContent = "התחל העלאה (" + fileInput.files.length + ")";

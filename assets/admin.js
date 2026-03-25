@@ -8,12 +8,17 @@
 
   const loginForm = document.getElementById("login-form");
   const uploadForm = document.getElementById("upload-form");
+  const fileInput = document.getElementById("image_file");
+  const selectedFileName = document.getElementById("selected-file-name");
   const signOutBtn = document.getElementById("sign-out");
   const refreshBtn = document.getElementById("refresh-items");
   const feedbackEl = document.getElementById("feedback");
-  const itemsTableBody = document.getElementById("items-table-body");
+  const itemsGrid = document.getElementById("items-grid");
 
   let supabaseClient = null;
+  let galleryItems = [];
+  let dragSourceId = null;
+  let isSavingOrder = false;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -59,54 +64,12 @@
     return decodeURIComponent(imageUrl.slice(markerIndex + marker.length));
   }
 
-  function renderItems(items) {
-    if (!items.length) {
-      itemsTableBody.innerHTML =
-        '<tr><td colspan="8" class="px-4 py-8 text-center text-on-surface-variant">אין פריטים בגלריה. העלה את הפריט הראשון.</td></tr>';
-      return;
-    }
-
-    itemsTableBody.innerHTML = items
-      .map(function (item) {
-        const publishedChecked = item.is_published ? "checked" : "";
-        const safeTitle = escapeHtml(item.title || "");
-        const safeAlt = escapeHtml(item.alt_text || "");
-        const safeCategory = escapeHtml(item.category || "");
-
-        return (
-          '<tr data-id="' +
-          item.id +
-          '" data-storage-path="' +
-          escapeHtml(item.storage_path || "") +
-          '" data-image-url="' +
-          escapeHtml(item.image_url || "") +
-          '">' +
-          '<td class="px-4 py-3"><img src="' +
-          escapeHtml(item.image_url) +
-          '" alt="' +
-          safeAlt +
-          '" class="h-16 w-16 rounded-lg object-cover"></td>' +
-          '<td class="px-4 py-3"><input class="title-input w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm" value="' +
-          safeTitle +
-          '"></td>' +
-          '<td class="px-4 py-3"><input class="alt-input w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm" value="' +
-          safeAlt +
-          '"></td>' +
-          '<td class="px-4 py-3"><input class="category-input w-full rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm" value="' +
-          safeCategory +
-          '"></td>' +
-          '<td class="px-4 py-3"><input type="number" class="order-input w-24 rounded-lg border border-outline-variant bg-white px-3 py-2 text-sm" value="' +
-          Number(item.sort_order || 1000) +
-          '"></td>' +
-          '<td class="px-4 py-3 text-center"><input type="checkbox" class="published-input h-4 w-4" ' +
-          publishedChecked +
-          '></td>' +
-          '<td class="px-4 py-3"><button type="button" class="save-item rounded-lg bg-primary text-white px-4 py-2 text-sm">שמור</button></td>' +
-          '<td class="px-4 py-3"><button type="button" class="delete-item rounded-lg border border-red-300 text-red-700 px-4 py-2 text-sm">מחק</button></td>' +
-          "</tr>"
-        );
-      })
-      .join("");
+  function deriveAltTextFromFileName(fileName) {
+    return fileName
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim() || "Gallery image";
   }
 
   function escapeHtml(value) {
@@ -118,10 +81,59 @@
       .replaceAll("'", "&#39;");
   }
 
+  function renderItems(items) {
+    if (!items.length) {
+      itemsGrid.innerHTML =
+        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-8 text-center text-on-surface-variant">אין עדיין תמונות בגלריה.</div>';
+      return;
+    }
+
+    itemsGrid.innerHTML = items
+      .map(function (item, index) {
+        const imageUrl = escapeHtml(item.image_url || "");
+        const storagePath = escapeHtml(item.storage_path || "");
+        const isPublished = item.is_published;
+
+        return (
+          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden" draggable="true" data-id="' +
+          item.id +
+          '" data-storage-path="' +
+          storagePath +
+          '" data-image-url="' +
+          imageUrl +
+          '">' +
+          '<div class="aspect-square bg-surface-container-low relative">' +
+          '<img src="' +
+          imageUrl +
+          '" alt="" class="h-full w-full object-cover" draggable="false">' +
+          '<span class="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs ' +
+          (isPublished ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700") +
+          '">' +
+          (isPublished ? "באתר" : "מוסתר") +
+          "</span>" +
+          "</div>" +
+          '<div class="p-3 space-y-2">' +
+          '<p class="text-xs text-on-surface-variant">סדר תצוגה: ' +
+          (index + 1) +
+          "</p>" +
+          '<div class="grid grid-cols-2 gap-2">' +
+          '<button type="button" class="toggle-publish rounded-lg border border-outline-variant px-3 py-2 text-xs hover:bg-surface-container-low">' +
+          (isPublished ? "הסתר מהאתר" : "פרסם באתר") +
+          "</button>" +
+          '<button type="button" class="delete-item rounded-lg border border-red-300 text-red-700 px-3 py-2 text-xs hover:bg-red-50">מחק</button>' +
+          "</div>" +
+          '<p class="text-[11px] text-on-surface-variant">גרור לשינוי סדר</p>' +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
   async function loadItems() {
     const { data, error } = await supabaseClient
       .from("gallery_items")
-      .select("id, title, alt_text, category, sort_order, is_published, image_url, storage_path, created_at")
+      .select("id, is_published, image_url, storage_path, sort_order, created_at")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
@@ -130,7 +142,8 @@
       return;
     }
 
-    renderItems(data || []);
+    galleryItems = data || [];
+    renderItems(galleryItems);
   }
 
   function setAuthView(isLoggedIn) {
@@ -194,6 +207,19 @@
     setFeedback("success", "התנתקת.");
   }
 
+  function updateSelectedFileName() {
+    if (!fileInput || !selectedFileName) {
+      return;
+    }
+
+    if (!fileInput.files || !fileInput.files.length) {
+      selectedFileName.textContent = "לא נבחר קובץ";
+      return;
+    }
+
+    selectedFileName.textContent = fileInput.files[0].name;
+  }
+
   async function handleUpload(event) {
     event.preventDefault();
     clearFeedback();
@@ -224,11 +250,15 @@
       data: { publicUrl }
     } = supabaseClient.storage.from(bucketName).getPublicUrl(uploadPath);
 
+    const maxOrder = galleryItems.reduce(function (max, item) {
+      return Math.max(max, Number(item.sort_order || 0));
+    }, 0);
+
     const payload = {
-      title: String(formData.get("title") || "").trim() || null,
-      alt_text: String(formData.get("alt_text") || "").trim() || "Gallery image",
-      category: String(formData.get("category") || "").trim() || null,
-      sort_order: Number(formData.get("sort_order") || 1000),
+      title: null,
+      alt_text: deriveAltTextFromFileName(imageFile.name),
+      category: null,
+      sort_order: maxOrder + 10,
       is_published: formData.get("is_published") === "on",
       image_url: publicUrl,
       storage_path: uploadPath
@@ -243,54 +273,41 @@
     }
 
     uploadForm.reset();
-    setFeedback("success", "המדיה הועלתה ונשמרה בגלריה.");
+    updateSelectedFileName();
+    setFeedback("success", "התמונה הועלתה בהצלחה.");
     await loadItems();
   }
 
-  async function handleTableClick(event) {
-    const row = event.target.closest("tr[data-id]");
-    if (!row) {
+  async function togglePublish(itemId) {
+    const item = galleryItems.find(function (entry) {
+      return entry.id === itemId;
+    });
+
+    if (!item) {
       return;
     }
 
-    const itemId = row.dataset.id;
-
-    if (event.target.classList.contains("save-item")) {
-      await saveItem(row, itemId);
-      return;
-    }
-
-    if (event.target.classList.contains("delete-item")) {
-      await deleteItem(row, itemId);
-    }
-  }
-
-  async function saveItem(row, itemId) {
-    const payload = {
-      title: row.querySelector(".title-input").value.trim() || null,
-      alt_text: row.querySelector(".alt-input").value.trim() || "Gallery image",
-      category: row.querySelector(".category-input").value.trim() || null,
-      sort_order: Number(row.querySelector(".order-input").value || 1000),
-      is_published: row.querySelector(".published-input").checked
-    };
-
-    const { error } = await supabaseClient.from("gallery_items").update(payload).eq("id", itemId);
+    const { error } = await supabaseClient
+      .from("gallery_items")
+      .update({ is_published: !item.is_published })
+      .eq("id", itemId);
 
     if (error) {
-      setFeedback("error", "שמירת הפריט נכשלה: " + error.message);
+      setFeedback("error", "נכשל עדכון סטטוס הפרסום: " + error.message);
       return;
     }
 
-    setFeedback("success", "הפריט נשמר.");
+    setFeedback("success", item.is_published ? "התמונה הוסתרה מהאתר." : "התמונה פורסמה באתר.");
+    await loadItems();
   }
 
-  async function deleteItem(row, itemId) {
-    const confirmed = window.confirm("למחוק את הפריט הזה מהגלריה?");
+  async function deleteItem(card, itemId) {
+    const confirmed = window.confirm("למחוק את התמונה מהגלריה?");
     if (!confirmed) {
       return;
     }
 
-    const storagePath = row.dataset.storagePath || inferStoragePathFromPublicUrl(row.dataset.imageUrl || "");
+    const storagePath = card.dataset.storagePath || inferStoragePathFromPublicUrl(card.dataset.imageUrl || "");
 
     if (storagePath) {
       const { error: storageDeleteError } = await supabaseClient.storage.from(bucketName).remove([storagePath]);
@@ -307,8 +324,125 @@
       return;
     }
 
-    setFeedback("success", "הפריט נמחק.");
+    setFeedback("success", "התמונה נמחקה.");
     await loadItems();
+  }
+
+  async function handleGridClick(event) {
+    const card = event.target.closest(".gallery-card");
+    if (!card) {
+      return;
+    }
+
+    const itemId = card.dataset.id;
+
+    if (event.target.classList.contains("toggle-publish")) {
+      await togglePublish(itemId);
+      return;
+    }
+
+    if (event.target.classList.contains("delete-item")) {
+      await deleteItem(card, itemId);
+    }
+  }
+
+  function clearDragStates() {
+    itemsGrid.querySelectorAll(".gallery-card").forEach(function (card) {
+      card.classList.remove("drag-over");
+      card.classList.remove("dragging");
+    });
+  }
+
+  function handleDragStart(event) {
+    const card = event.target.closest(".gallery-card");
+    if (!card) {
+      return;
+    }
+
+    dragSourceId = card.dataset.id;
+    card.classList.add("dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", dragSourceId);
+  }
+
+  function handleDragOver(event) {
+    const draggingCard = itemsGrid.querySelector(".gallery-card.dragging");
+    if (!draggingCard) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const targetCard = event.target.closest(".gallery-card");
+    if (!targetCard || targetCard === draggingCard) {
+      return;
+    }
+
+    clearDragStates();
+    draggingCard.classList.add("dragging");
+    targetCard.classList.add("drag-over");
+
+    const rect = targetCard.getBoundingClientRect();
+    const before = event.clientY < rect.top + rect.height / 2;
+
+    if (before) {
+      itemsGrid.insertBefore(draggingCard, targetCard);
+    } else {
+      itemsGrid.insertBefore(draggingCard, targetCard.nextSibling);
+    }
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+  }
+
+  async function persistOrderFromDom() {
+    const orderedIds = Array.from(itemsGrid.querySelectorAll(".gallery-card")).map(function (card) {
+      return card.dataset.id;
+    });
+
+    if (!orderedIds.length) {
+      return;
+    }
+
+    const hasChanged = orderedIds.some(function (id, index) {
+      return !galleryItems[index] || galleryItems[index].id !== id;
+    });
+
+    if (!hasChanged || isSavingOrder) {
+      return;
+    }
+
+    isSavingOrder = true;
+
+    const updates = orderedIds.map(function (id, index) {
+      return supabaseClient
+        .from("gallery_items")
+        .update({ sort_order: (index + 1) * 10 })
+        .eq("id", id);
+    });
+
+    const results = await Promise.all(updates);
+    const failedResult = results.find(function (result) {
+      return result.error;
+    });
+
+    isSavingOrder = false;
+
+    if (failedResult) {
+      setFeedback("error", "שמירת הסדר נכשלה: " + failedResult.error.message);
+      await loadItems();
+      return;
+    }
+
+    setFeedback("success", "סדר התמונות נשמר.");
+    await loadItems();
+  }
+
+  async function handleDragEnd() {
+    clearDragStates();
+    await persistOrderFromDom();
+    dragSourceId = null;
   }
 
   function validateSetup() {
@@ -338,9 +472,15 @@
 
     loginForm.addEventListener("submit", handleLogin);
     uploadForm.addEventListener("submit", handleUpload);
+    fileInput.addEventListener("change", updateSelectedFileName);
     signOutBtn.addEventListener("click", handleSignOut);
     refreshBtn.addEventListener("click", loadItems);
-    itemsTableBody.addEventListener("click", handleTableClick);
+
+    itemsGrid.addEventListener("click", handleGridClick);
+    itemsGrid.addEventListener("dragstart", handleDragStart);
+    itemsGrid.addEventListener("dragover", handleDragOver);
+    itemsGrid.addEventListener("drop", handleDrop);
+    itemsGrid.addEventListener("dragend", handleDragEnd);
 
     supabaseClient.auth.onAuthStateChange(function (_event, session) {
       if (session) {
@@ -351,6 +491,7 @@
       }
     });
 
+    updateSelectedFileName();
     await initSession();
   }
 

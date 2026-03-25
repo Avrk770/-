@@ -10,6 +10,11 @@
   const uploadForm = document.getElementById("upload-form");
   const fileInput = document.getElementById("image_file");
   const selectedFileName = document.getElementById("selected-file-name");
+  const uploadSubmitBtn = document.getElementById("upload-submit");
+  const uploadProgressWrap = document.getElementById("upload-progress-wrap");
+  const uploadProgressBar = document.getElementById("upload-progress-bar");
+  const uploadProgressText = document.getElementById("upload-progress-text");
+  const uploadProgressDetail = document.getElementById("upload-progress-detail");
   const signOutBtn = document.getElementById("sign-out");
   const refreshBtn = document.getElementById("refresh-items");
   const feedbackEl = document.getElementById("feedback");
@@ -230,6 +235,39 @@
     selectedFileName.textContent = "נבחרו " + fileInput.files.length + " קבצים";
   }
 
+  function resetUploadProgress() {
+    if (!uploadProgressWrap || !uploadProgressBar || !uploadProgressText || !uploadProgressDetail) {
+      return;
+    }
+
+    uploadProgressWrap.classList.add("hidden");
+    uploadProgressBar.style.width = "0%";
+    uploadProgressText.textContent = "0%";
+    uploadProgressDetail.textContent = "";
+  }
+
+  function startUploadProgress(totalFiles) {
+    if (!uploadProgressWrap || !uploadProgressBar || !uploadProgressText || !uploadProgressDetail) {
+      return;
+    }
+
+    uploadProgressWrap.classList.remove("hidden");
+    uploadProgressBar.style.width = "0%";
+    uploadProgressText.textContent = "0%";
+    uploadProgressDetail.textContent = "0/" + totalFiles;
+  }
+
+  function setUploadProgress(doneFiles, totalFiles, currentFileName) {
+    if (!uploadProgressBar || !uploadProgressText || !uploadProgressDetail) {
+      return;
+    }
+
+    const percent = Math.min(100, Math.round((doneFiles / totalFiles) * 100));
+    uploadProgressBar.style.width = percent + "%";
+    uploadProgressText.textContent = percent + "%";
+    uploadProgressDetail.textContent = doneFiles + "/" + totalFiles + (currentFileName ? " - " + currentFileName : "");
+  }
+
   async function handleUpload(event) {
     event.preventDefault();
     clearFeedback();
@@ -243,55 +281,77 @@
       return;
     }
 
+    if (uploadSubmitBtn) {
+      uploadSubmitBtn.disabled = true;
+      uploadSubmitBtn.classList.add("opacity-70", "cursor-not-allowed");
+      uploadSubmitBtn.textContent = "מעלה...";
+    }
+    startUploadProgress(files.length);
+
     const maxOrder = galleryItems.reduce(function (max, item) {
       return Math.max(max, Number(item.sort_order || 0));
     }, 0);
 
     let successCount = 0;
     let failedCount = 0;
+    let processedCount = 0;
     const failedNames = [];
 
-    for (let index = 0; index < files.length; index += 1) {
-      const imageFile = files[index];
-      const uploadPath = Date.now() + "-" + index + "-" + safeFileName(imageFile.name);
+    try {
+      for (let index = 0; index < files.length; index += 1) {
+        const imageFile = files[index];
+        const uploadPath = Date.now() + "-" + index + "-" + safeFileName(imageFile.name);
 
-      const { error: storageError } = await supabaseClient.storage
-        .from(bucketName)
-        .upload(uploadPath, imageFile, {
-          cacheControl: "3600",
-          upsert: false
-        });
+        const { error: storageError } = await supabaseClient.storage
+          .from(bucketName)
+          .upload(uploadPath, imageFile, {
+            cacheControl: "3600",
+            upsert: false
+          });
 
-      if (storageError) {
-        failedCount += 1;
-        failedNames.push(imageFile.name);
-        continue;
+        if (storageError) {
+          failedCount += 1;
+          failedNames.push(imageFile.name);
+          processedCount += 1;
+          setUploadProgress(processedCount, files.length, imageFile.name);
+          continue;
+        }
+
+        const {
+          data: { publicUrl }
+        } = supabaseClient.storage.from(bucketName).getPublicUrl(uploadPath);
+
+        const payload = {
+          title: null,
+          alt_text: deriveAltTextFromFileName(imageFile.name),
+          category: null,
+          sort_order: maxOrder + (index + 1) * 10,
+          is_published: publishNow,
+          image_url: publicUrl,
+          storage_path: uploadPath
+        };
+
+        const { error: insertError } = await supabaseClient.from("gallery_items").insert(payload);
+
+        if (insertError) {
+          await supabaseClient.storage.from(bucketName).remove([uploadPath]);
+          failedCount += 1;
+          failedNames.push(imageFile.name);
+          processedCount += 1;
+          setUploadProgress(processedCount, files.length, imageFile.name);
+          continue;
+        }
+
+        successCount += 1;
+        processedCount += 1;
+        setUploadProgress(processedCount, files.length, imageFile.name);
       }
-
-      const {
-        data: { publicUrl }
-      } = supabaseClient.storage.from(bucketName).getPublicUrl(uploadPath);
-
-      const payload = {
-        title: null,
-        alt_text: deriveAltTextFromFileName(imageFile.name),
-        category: null,
-        sort_order: maxOrder + (index + 1) * 10,
-        is_published: publishNow,
-        image_url: publicUrl,
-        storage_path: uploadPath
-      };
-
-      const { error: insertError } = await supabaseClient.from("gallery_items").insert(payload);
-
-      if (insertError) {
-        await supabaseClient.storage.from(bucketName).remove([uploadPath]);
-        failedCount += 1;
-        failedNames.push(imageFile.name);
-        continue;
+    } finally {
+      if (uploadSubmitBtn) {
+        uploadSubmitBtn.disabled = false;
+        uploadSubmitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+        uploadSubmitBtn.textContent = "העלה תמונות";
       }
-
-      successCount += 1;
     }
 
     uploadForm.reset();
@@ -537,6 +597,7 @@
     });
 
     updateSelectedFileName();
+    resetUploadProgress();
     await initSession();
   }
 

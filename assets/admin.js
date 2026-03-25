@@ -187,6 +187,7 @@
       return;
     }
 
+    resetUploadProgress();
     uploadModal.classList.remove("hidden");
   }
 
@@ -195,7 +196,14 @@
       return;
     }
 
+    resetUploadProgress();
     uploadModal.classList.add("hidden");
+  }
+
+  function finishUploadProgress() {
+    setTimeout(function () {
+      resetUploadProgress();
+    }, 900);
   }
 
   function renderSection(gridEl, items, isActiveSection) {
@@ -536,6 +544,7 @@
 
     if (successCount && !failedCount) {
       setFeedback("success", "הועלו בהצלחה " + successCount + " תמונות.");
+      finishUploadProgress();
       closeUploadModal();
       await loadItems();
       return;
@@ -553,11 +562,13 @@
           (failedNames.length > 3 ? "..." : "") +
           ")."
       );
+      finishUploadProgress();
       await loadItems();
       return;
     }
 
     setFeedback("error", "ההעלאה נכשלה לכל הקבצים.");
+    finishUploadProgress();
     await loadItems();
   }
 

@@ -50,7 +50,6 @@
   let isSavingOrder = false;
   let closeModalTimer = null;
   let dropzoneDragDepth = 0;
-  let sortableInstance = null;
   let draggedCard = null;
   let dragPlaceholder = null;
   let hasDragReordered = false;
@@ -194,39 +193,6 @@
 
     updateSelectionUi();
     renderItems(galleryItems);
-    syncSortableState();
-  }
-
-  function initSortableReorder() {
-    if (!itemsGridActive || !window.Sortable || sortableInstance) {
-      return;
-    }
-
-    sortableInstance = window.Sortable.create(itemsGridActive, {
-      animation: 220,
-      easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-      ghostClass: "sortable-ghost",
-      chosenClass: "sortable-chosen",
-      dragClass: "sortable-drag",
-      draggable: ".gallery-card",
-      filter: ".select-item,.toggle-publish,.delete-item,input,button,label",
-      preventOnFilter: false,
-      disabled: !isEditMode,
-      onEnd: async function () {
-        if (!isEditMode) {
-          return;
-        }
-        await persistOrderFromDom();
-      }
-    });
-  }
-
-  function syncSortableState() {
-    if (!sortableInstance) {
-      return;
-    }
-
-    sortableInstance.option("disabled", !isEditMode);
   }
 
   function updateHiddenSectionUi() {
@@ -1133,7 +1099,10 @@
 
     itemsGridActive.addEventListener("click", handleGridClick);
     itemsGridActive.addEventListener("change", handleGridChange);
-    initSortableReorder();
+    itemsGridActive.addEventListener("dragstart", handleDragStart);
+    itemsGridActive.addEventListener("dragover", handleDragOver);
+    itemsGridActive.addEventListener("drop", handleDrop);
+    itemsGridActive.addEventListener("dragend", handleDragEnd);
 
     itemsGridHidden.addEventListener("click", handleGridClick);
     itemsGridHidden.addEventListener("change", handleGridChange);

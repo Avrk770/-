@@ -181,8 +181,10 @@
       });
     }, observerOptions);
 
+    const computedColumns = Number.parseInt(window.getComputedStyle(masonryGrid).columnCount, 10);
+    const columns = Number.isFinite(computedColumns) && computedColumns > 0 ? computedColumns : 2;
+
     document.querySelectorAll(".masonry-item").forEach(function (item, index) {
-      const columns = window.innerWidth >= 1024 ? 4 : 2;
       const delay = (index % columns) * 150;
       item.style.transitionDelay = delay + "ms";
       observer.observe(item);

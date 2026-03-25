@@ -182,7 +182,8 @@
     }, observerOptions);
 
     document.querySelectorAll(".masonry-item").forEach(function (item, index) {
-      const delay = (index % 4) * 150;
+      const columns = window.innerWidth >= 1024 ? 4 : 2;
+      const delay = (index % columns) * 150;
       item.style.transitionDelay = delay + "ms";
       observer.observe(item);
     });

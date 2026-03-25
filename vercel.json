@@ -4,7 +4,16 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/admin.com",
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/admin.html",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -15,14 +24,19 @@
   ],
   "redirects": [
     {
-      "source": "/admin.html",
-      "destination": "/",
+      "source": "/studio-admin-9k4m2x.html",
+      "destination": "/admin",
       "permanent": false
     },
     {
-      "source": "/studio-admin-9k4m2x.html",
-      "destination": "/",
-      "permanent": false
+      "source": "/admin.com",
+      "destination": "/admin",
+      "permanent": true
+    },
+    {
+      "source": "/admin.com.html",
+      "destination": "/admin",
+      "permanent": true
     },
     {
       "source": "/index.html",

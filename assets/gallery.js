@@ -67,6 +67,8 @@
   const closeBtn = document.getElementById("close-lightbox");
   const prevBtn = document.getElementById("prev-lightbox");
   const nextBtn = document.getElementById("next-lightbox");
+  const lightboxTitle = document.getElementById("lightbox-title");
+  const lightboxCounter = document.getElementById("lightbox-counter");
   const masonryGrid = document.getElementById("masonry-grid");
   const galleryStatus = document.getElementById("gallery-status");
 
@@ -200,14 +202,25 @@
   }
 
   function updateLightboxContent(isInitial) {
+    const currentItem = currentItems[currentIndex];
+    const titleText = currentItem.title || currentItem.alt_text || "עבודה";
+
+    if (lightboxTitle) {
+      lightboxTitle.textContent = titleText;
+    }
+
+    if (lightboxCounter) {
+      lightboxCounter.textContent = currentIndex + 1 + " / " + currentItems.length;
+    }
+
     if (!isInitial) {
       lightboxImg.style.opacity = "0";
       lightboxImg.style.transform = "scale(0.95)";
     }
 
     setTimeout(function () {
-      lightboxImg.src = currentItems[currentIndex].image_url;
-      lightboxImg.alt = currentItems[currentIndex].alt_text || currentItems[currentIndex].title || "Gallery image";
+      lightboxImg.src = currentItem.image_url;
+      lightboxImg.alt = currentItem.alt_text || currentItem.title || "Gallery image";
       lightboxImg.onload = function () {
         lightboxImg.style.opacity = "1";
         lightboxImg.style.transform = "scale(1)";
@@ -235,6 +248,12 @@
     setTimeout(function () {
       modal.classList.add("hidden");
       lightboxImg.src = "";
+      if (lightboxTitle) {
+        lightboxTitle.textContent = "";
+      }
+      if (lightboxCounter) {
+        lightboxCounter.textContent = "";
+      }
     }, 400);
 
     document.body.style.overflow = "";

@@ -298,8 +298,7 @@
     const failedNames = [];
 
     try {
-      for (let index = 0; index < files.length; index += 1) {
-        const imageFile = files[index];
+      async function processSingleFile(imageFile, index) {
         const uploadPath = Date.now() + "-" + index + "-" + safeFileName(imageFile.name);
 
         const { error: storageError } = await supabaseClient.storage
@@ -314,7 +313,7 @@
           failedNames.push(imageFile.name);
           processedCount += 1;
           setUploadProgress(processedCount, files.length, imageFile.name);
-          continue;
+          return;
         }
 
         const {
@@ -339,13 +338,32 @@
           failedNames.push(imageFile.name);
           processedCount += 1;
           setUploadProgress(processedCount, files.length, imageFile.name);
-          continue;
+          return;
         }
 
         successCount += 1;
         processedCount += 1;
         setUploadProgress(processedCount, files.length, imageFile.name);
       }
+
+      // Run uploads in parallel workers for faster batch processing.
+      const workerCount = Math.min(4, files.length);
+      let nextIndex = 0;
+
+      async function worker() {
+        while (nextIndex < files.length) {
+          const currentIndex = nextIndex;
+          nextIndex += 1;
+          const file = files[currentIndex];
+          await processSingleFile(file, currentIndex);
+        }
+      }
+
+      await Promise.all(
+        Array.from({ length: workerCount }, function () {
+          return worker();
+        })
+      );
     } finally {
       if (uploadSubmitBtn) {
         uploadSubmitBtn.disabled = false;

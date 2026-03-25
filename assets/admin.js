@@ -15,14 +15,25 @@
   const uploadProgressBar = document.getElementById("upload-progress-bar");
   const uploadProgressText = document.getElementById("upload-progress-text");
   const uploadProgressDetail = document.getElementById("upload-progress-detail");
+
   const signOutBtn = document.getElementById("sign-out");
   const refreshBtn = document.getElementById("refresh-items");
   const feedbackEl = document.getElementById("feedback");
-  const itemsGrid = document.getElementById("items-grid");
-  const itemsCountEl = document.getElementById("items-count");
+
+  const itemsGridActive = document.getElementById("items-grid-active");
+  const itemsGridHidden = document.getElementById("items-grid-hidden");
+  const itemsCountActiveEl = document.getElementById("items-count-active");
+  const itemsCountHiddenEl = document.getElementById("items-count-hidden");
+
+  const selectedCountEl = document.getElementById("selected-count");
+  const selectAllActiveBtn = document.getElementById("select-all-active");
+  const selectAllHiddenBtn = document.getElementById("select-all-hidden");
+  const clearSelectionBtn = document.getElementById("clear-selection");
+  const deleteSelectedBtn = document.getElementById("delete-selected");
 
   let supabaseClient = null;
   let galleryItems = [];
+  let selectedIds = new Set();
   let dragSourceId = null;
   let isSavingOrder = false;
 
@@ -87,25 +98,78 @@
       .replaceAll("'", "&#39;");
   }
 
-  function renderItems(items) {
-    if (itemsCountEl) {
-      itemsCountEl.textContent = items.length + " תמונות";
+  function updateSelectionUi() {
+    if (selectedCountEl) {
+      selectedCountEl.textContent = selectedIds.size + " נבחרו";
     }
 
-    if (!items.length) {
-      itemsGrid.innerHTML =
-        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-6 text-center text-on-surface-variant">אין עדיין תמונות בגלריה.</div>';
+    if (deleteSelectedBtn) {
+      deleteSelectedBtn.disabled = selectedIds.size === 0;
+    }
+  }
+
+  function setCardSelectedClass(card, isSelected) {
+    card.classList.toggle("ring-2", isSelected);
+    card.classList.toggle("ring-primary", isSelected);
+  }
+
+  function applySelectionToDom() {
+    const cards = document.querySelectorAll(".gallery-card");
+    cards.forEach(function (card) {
+      const id = card.dataset.id;
+      const isSelected = selectedIds.has(id);
+      const checkbox = card.querySelector(".select-item");
+
+      if (checkbox) {
+        checkbox.checked = isSelected;
+      }
+
+      setCardSelectedClass(card, isSelected);
+    });
+  }
+
+  function syncSelectionWithItems() {
+    const idsInData = new Set(
+      galleryItems.map(function (item) {
+        return item.id;
+      })
+    );
+
+    selectedIds.forEach(function (id) {
+      if (!idsInData.has(id)) {
+        selectedIds.delete(id);
+      }
+    });
+
+    updateSelectionUi();
+  }
+
+  function renderSection(gridEl, items, isActive) {
+    if (!gridEl) {
       return;
     }
 
-    itemsGrid.innerHTML = items
+    if (!items.length) {
+      gridEl.innerHTML =
+        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-5 text-center text-on-surface-variant text-sm">' +
+        (isActive ? "אין תמונות פעילות כרגע." : "אין תמונות מוסתרות כרגע.") +
+        "</div>";
+      return;
+    }
+
+    gridEl.innerHTML = items
       .map(function (item, index) {
         const imageUrl = escapeHtml(item.image_url || "");
         const storagePath = escapeHtml(item.storage_path || "");
-        const isPublished = item.is_published;
+        const isSelected = selectedIds.has(item.id);
+        const publishedLabel = item.is_published ? "באתר" : "מוסתר";
 
         return (
-          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden shadow-sm" draggable="true" data-id="' +
+          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden shadow-sm ' +
+          (isSelected ? "ring-2 ring-primary" : "") +
+          '" ' +
+          (isActive ? 'draggable="true" ' : "") +
+          'data-id="' +
           item.id +
           '" data-storage-path="' +
           storagePath +
@@ -116,28 +180,62 @@
           '<img src="' +
           imageUrl +
           '" alt="" class="h-full w-full object-cover" draggable="false">' +
-          '<span class="absolute top-2 left-2 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
-          (index + 1) +
-          "</span>" +
+          '<label class="absolute top-2 left-2 inline-flex items-center justify-center rounded-md bg-black/70 p-1.5 cursor-pointer">' +
+          '<input type="checkbox" class="select-item h-3.5 w-3.5" data-id="' +
+          item.id +
+          '" ' +
+          (isSelected ? "checked" : "") +
+          ">" +
+          "</label>" +
+          (isActive
+            ? '<span class="absolute top-2 left-11 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
+              (index + 1) +
+              "</span>"
+            : "") +
           '<span class="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs ' +
-          (isPublished ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700") +
+          (item.is_published ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700") +
           '">' +
-          (isPublished ? "באתר" : "מוסתר") +
+          publishedLabel +
           "</span>" +
           '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">' +
           '<div class="grid grid-cols-2 gap-2">' +
           '<button type="button" class="toggle-publish rounded-md bg-white/90 px-2 py-1.5 text-[11px] hover:bg-white">' +
-          (isPublished ? "הסתר" : "פרסם") +
+          (item.is_published ? "הסתר" : "פרסם") +
           "</button>" +
           '<button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button>' +
           "</div>" +
           "</div>" +
-          '<span class="absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>' +
+          (isActive
+            ? '<span class="absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>'
+            : "") +
           "</div>" +
           "</article>"
         );
       })
       .join("");
+  }
+
+  function renderItems(items) {
+    const activeItems = items.filter(function (item) {
+      return item.is_published;
+    });
+
+    const hiddenItems = items.filter(function (item) {
+      return !item.is_published;
+    });
+
+    if (itemsCountActiveEl) {
+      itemsCountActiveEl.textContent = activeItems.length + " פעילות";
+    }
+
+    if (itemsCountHiddenEl) {
+      itemsCountHiddenEl.textContent = hiddenItems.length + " מוסתרות";
+    }
+
+    renderSection(itemsGridActive, activeItems, true);
+    renderSection(itemsGridHidden, hiddenItems, false);
+    syncSelectionWithItems();
+    applySelectionToDom();
   }
 
   async function loadItems() {
@@ -346,7 +444,6 @@
         setUploadProgress(processedCount, files.length, imageFile.name);
       }
 
-      // Run uploads in parallel workers for faster batch processing.
       const workerCount = Math.min(4, files.length);
       let nextIndex = 0;
 
@@ -401,11 +498,14 @@
     await loadItems();
   }
 
-  async function togglePublish(itemId) {
-    const item = galleryItems.find(function (entry) {
-      return entry.id === itemId;
+  function getItemById(itemId) {
+    return galleryItems.find(function (item) {
+      return item.id === itemId;
     });
+  }
 
+  async function togglePublish(itemId) {
+    const item = getItemById(itemId);
     if (!item) {
       return;
     }
@@ -424,31 +524,113 @@
     await loadItems();
   }
 
-  async function deleteItem(card, itemId) {
-    const confirmed = window.confirm("למחוק את התמונה מהגלריה?");
-    if (!confirmed) {
-      return;
+  async function deleteItemById(itemId) {
+    const item = getItemById(itemId);
+    if (!item) {
+      return { ok: false, error: "פריט לא נמצא" };
     }
 
-    const storagePath = card.dataset.storagePath || inferStoragePathFromPublicUrl(card.dataset.imageUrl || "");
+    const storagePath = item.storage_path || inferStoragePathFromPublicUrl(item.image_url || "");
 
     if (storagePath) {
       const { error: storageDeleteError } = await supabaseClient.storage.from(bucketName).remove([storagePath]);
       if (storageDeleteError) {
-        setFeedback("error", "נכשלה מחיקת הקובץ מה-Storage: " + storageDeleteError.message);
-        return;
+        return { ok: false, error: "נכשלה מחיקת הקובץ מה-Storage: " + storageDeleteError.message };
       }
     }
 
     const { error: deleteError } = await supabaseClient.from("gallery_items").delete().eq("id", itemId);
 
     if (deleteError) {
-      setFeedback("error", "נכשלה מחיקת הפריט: " + deleteError.message);
+      return { ok: false, error: "נכשלה מחיקת הפריט: " + deleteError.message };
+    }
+
+    return { ok: true };
+  }
+
+  async function handleSingleDelete(itemId) {
+    const confirmed = window.confirm("למחוק את התמונה מהגלריה?");
+    if (!confirmed) {
       return;
     }
 
+    const result = await deleteItemById(itemId);
+
+    if (!result.ok) {
+      setFeedback("error", result.error);
+      return;
+    }
+
+    selectedIds.delete(itemId);
     setFeedback("success", "התמונה נמחקה.");
     await loadItems();
+  }
+
+  async function handleBulkDelete() {
+    if (!selectedIds.size) {
+      return;
+    }
+
+    const confirmed = window.confirm("למחוק " + selectedIds.size + " תמונות נבחרות?");
+    if (!confirmed) {
+      return;
+    }
+
+    if (deleteSelectedBtn) {
+      deleteSelectedBtn.disabled = true;
+    }
+
+    const ids = Array.from(selectedIds);
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const id of ids) {
+      const result = await deleteItemById(id);
+      if (result.ok) {
+        successCount += 1;
+        selectedIds.delete(id);
+      } else {
+        failedCount += 1;
+      }
+    }
+
+    if (deleteSelectedBtn) {
+      deleteSelectedBtn.disabled = false;
+    }
+
+    if (successCount && !failedCount) {
+      setFeedback("success", "נמחקו " + successCount + " תמונות.");
+    } else if (successCount && failedCount) {
+      setFeedback("error", "נמחקו " + successCount + " תמונות, " + failedCount + " נכשלו.");
+    } else {
+      setFeedback("error", "מחיקת התמונות הנבחרות נכשלה.");
+    }
+
+    await loadItems();
+  }
+
+  function handleGridChange(event) {
+    if (!event.target.classList.contains("select-item")) {
+      return;
+    }
+
+    const itemId = event.target.dataset.id;
+    if (!itemId) {
+      return;
+    }
+
+    if (event.target.checked) {
+      selectedIds.add(itemId);
+    } else {
+      selectedIds.delete(itemId);
+    }
+
+    const card = event.target.closest(".gallery-card");
+    if (card) {
+      setCardSelectedClass(card, event.target.checked);
+    }
+
+    updateSelectionUi();
   }
 
   async function handleGridClick(event) {
@@ -465,12 +647,16 @@
     }
 
     if (event.target.classList.contains("delete-item")) {
-      await deleteItem(card, itemId);
+      await handleSingleDelete(itemId);
     }
   }
 
   function clearDragStates() {
-    itemsGrid.querySelectorAll(".gallery-card").forEach(function (card) {
+    if (!itemsGridActive) {
+      return;
+    }
+
+    itemsGridActive.querySelectorAll(".gallery-card").forEach(function (card) {
       card.classList.remove("drag-over");
       card.classList.remove("dragging");
     });
@@ -478,7 +664,7 @@
 
   function handleDragStart(event) {
     const card = event.target.closest(".gallery-card");
-    if (!card) {
+    if (!card || !itemsGridActive || !itemsGridActive.contains(card)) {
       return;
     }
 
@@ -489,7 +675,11 @@
   }
 
   function handleDragOver(event) {
-    const draggingCard = itemsGrid.querySelector(".gallery-card.dragging");
+    if (!itemsGridActive) {
+      return;
+    }
+
+    const draggingCard = itemsGridActive.querySelector(".gallery-card.dragging");
     if (!draggingCard) {
       return;
     }
@@ -497,7 +687,7 @@
     event.preventDefault();
 
     const targetCard = event.target.closest(".gallery-card");
-    if (!targetCard || targetCard === draggingCard) {
+    if (!targetCard || targetCard === draggingCard || !itemsGridActive.contains(targetCard)) {
       return;
     }
 
@@ -509,9 +699,9 @@
     const before = event.clientY < rect.top + rect.height / 2;
 
     if (before) {
-      itemsGrid.insertBefore(draggingCard, targetCard);
+      itemsGridActive.insertBefore(draggingCard, targetCard);
     } else {
-      itemsGrid.insertBefore(draggingCard, targetCard.nextSibling);
+      itemsGridActive.insertBefore(draggingCard, targetCard.nextSibling);
     }
   }
 
@@ -520,7 +710,11 @@
   }
 
   async function persistOrderFromDom() {
-    const orderedIds = Array.from(itemsGrid.querySelectorAll(".gallery-card")).map(function (card) {
+    if (!itemsGridActive) {
+      return;
+    }
+
+    const orderedIds = Array.from(itemsGridActive.querySelectorAll(".gallery-card")).map(function (card) {
       return card.dataset.id;
     });
 
@@ -528,8 +722,16 @@
       return;
     }
 
+    const currentActiveIds = galleryItems
+      .filter(function (item) {
+        return item.is_published;
+      })
+      .map(function (item) {
+        return item.id;
+      });
+
     const hasChanged = orderedIds.some(function (id, index) {
-      return !galleryItems[index] || galleryItems[index].id !== id;
+      return currentActiveIds[index] !== id;
     });
 
     if (!hasChanged || isSavingOrder) {
@@ -558,7 +760,7 @@
       return;
     }
 
-    setFeedback("success", "סדר התמונות נשמר.");
+    setFeedback("success", "סדר התמונות הפעילות נשמר.");
     await loadItems();
   }
 
@@ -566,6 +768,23 @@
     clearDragStates();
     await persistOrderFromDom();
     dragSourceId = null;
+  }
+
+  function selectAllByState(isPublished) {
+    galleryItems.forEach(function (item) {
+      if (item.is_published === isPublished) {
+        selectedIds.add(item.id);
+      }
+    });
+
+    applySelectionToDom();
+    updateSelectionUi();
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    applySelectionToDom();
+    updateSelectionUi();
   }
 
   function validateSetup() {
@@ -599,11 +818,39 @@
     signOutBtn.addEventListener("click", handleSignOut);
     refreshBtn.addEventListener("click", loadItems);
 
-    itemsGrid.addEventListener("click", handleGridClick);
-    itemsGrid.addEventListener("dragstart", handleDragStart);
-    itemsGrid.addEventListener("dragover", handleDragOver);
-    itemsGrid.addEventListener("drop", handleDrop);
-    itemsGrid.addEventListener("dragend", handleDragEnd);
+    if (itemsGridActive) {
+      itemsGridActive.addEventListener("click", handleGridClick);
+      itemsGridActive.addEventListener("change", handleGridChange);
+      itemsGridActive.addEventListener("dragstart", handleDragStart);
+      itemsGridActive.addEventListener("dragover", handleDragOver);
+      itemsGridActive.addEventListener("drop", handleDrop);
+      itemsGridActive.addEventListener("dragend", handleDragEnd);
+    }
+
+    if (itemsGridHidden) {
+      itemsGridHidden.addEventListener("click", handleGridClick);
+      itemsGridHidden.addEventListener("change", handleGridChange);
+    }
+
+    if (selectAllActiveBtn) {
+      selectAllActiveBtn.addEventListener("click", function () {
+        selectAllByState(true);
+      });
+    }
+
+    if (selectAllHiddenBtn) {
+      selectAllHiddenBtn.addEventListener("click", function () {
+        selectAllByState(false);
+      });
+    }
+
+    if (clearSelectionBtn) {
+      clearSelectionBtn.addEventListener("click", clearSelection);
+    }
+
+    if (deleteSelectedBtn) {
+      deleteSelectedBtn.addEventListener("click", handleBulkDelete);
+    }
 
     supabaseClient.auth.onAuthStateChange(function (_event, session) {
       if (session) {
@@ -616,6 +863,7 @@
 
     updateSelectedFileName();
     resetUploadProgress();
+    updateSelectionUi();
     await initSession();
   }
 

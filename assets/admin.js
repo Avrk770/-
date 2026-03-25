@@ -213,7 +213,7 @@
 
     if (!items.length) {
       gridEl.innerHTML =
-        '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-5 text-center text-on-surface-variant text-sm">' +
+        '<div class="col-span-full rounded-xl border border-outline-variant dark:border-white/10 bg-surface-container-low dark:bg-slate-800/70 p-5 text-center text-on-surface-variant dark:text-slate-300 text-sm">' +
         (isActiveSection ? "אין תמונות פעילות כרגע." : "אין תמונות מוסתרות כרגע.") +
         "</div>";
       return;
@@ -226,7 +226,7 @@
         const isSelected = selectedIds.has(item.id);
 
         return (
-          '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden shadow-sm ' +
+          '<article class="gallery-card rounded-xl border border-outline-variant dark:border-white/10 bg-white dark:bg-slate-900 overflow-hidden shadow-sm ' +
           (isSelected ? "ring-2 ring-primary" : "") +
           '" ' +
           (isEditMode && isActiveSection ? 'draggable="true" ' : "") +
@@ -254,7 +254,7 @@
               "></label>"
             : "") +
           (isEditMode
-            ? '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2"><div class="grid grid-cols-2 gap-2"><button type="button" class="toggle-publish rounded-md bg-white/90 px-2 py-1.5 text-[11px] hover:bg-white">' +
+            ? '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2"><div class="grid grid-cols-2 gap-2"><button type="button" class="toggle-publish rounded-md bg-white/90 dark:bg-slate-800/90 dark:text-slate-100 px-2 py-1.5 text-[11px] hover:bg-white dark:hover:bg-slate-700">' +
               (item.is_published ? "הסתר" : "פרסם") +
               '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div></div>'
             : "") +

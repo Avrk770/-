@@ -59,9 +59,25 @@
     feedbackEl.className = "rounded-xl px-4 py-3 text-sm";
 
     if (type === "error") {
-      feedbackEl.classList.add("bg-red-50", "text-red-700", "border", "border-red-100");
+      feedbackEl.classList.add(
+        "bg-red-50",
+        "text-red-700",
+        "border",
+        "border-red-100",
+        "dark:bg-red-900/25",
+        "dark:text-red-200",
+        "dark:border-red-500/30"
+      );
     } else {
-      feedbackEl.classList.add("bg-emerald-50", "text-emerald-700", "border", "border-emerald-100");
+      feedbackEl.classList.add(
+        "bg-emerald-50",
+        "text-emerald-700",
+        "border",
+        "border-emerald-100",
+        "dark:bg-emerald-900/25",
+        "dark:text-emerald-200",
+        "dark:border-emerald-500/30"
+      );
     }
 
     feedbackEl.textContent = message;

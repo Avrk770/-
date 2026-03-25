@@ -50,6 +50,9 @@
   let isSavingOrder = false;
   let closeModalTimer = null;
   let dropzoneDragDepth = 0;
+  let draggedCard = null;
+  let dragPlaceholder = null;
+  let hasDragReordered = false;
 
   function setFeedback(type, message) {
     if (!feedbackEl) {
@@ -820,7 +823,40 @@
     itemsGridActive.querySelectorAll(".gallery-card").forEach(function (card) {
       card.classList.remove("drag-over");
       card.classList.remove("dragging");
+      card.classList.remove("dragging-source");
     });
+  }
+
+  function ensureDragPlaceholder(referenceCard) {
+    if (!referenceCard) {
+      return null;
+    }
+
+    if (!dragPlaceholder) {
+      dragPlaceholder = document.createElement("div");
+      dragPlaceholder.className = "drag-placeholder";
+      dragPlaceholder.setAttribute("aria-hidden", "true");
+    }
+
+    const rect = referenceCard.getBoundingClientRect();
+    dragPlaceholder.style.height = Math.max(120, Math.round(rect.height)) + "px";
+    return dragPlaceholder;
+  }
+
+  function placeDraggedCardToPlaceholder() {
+    if (!draggedCard || !itemsGridActive) {
+      return;
+    }
+
+    if (dragPlaceholder && dragPlaceholder.parentNode === itemsGridActive) {
+      itemsGridActive.insertBefore(draggedCard, dragPlaceholder);
+      dragPlaceholder.remove();
+    }
+
+    draggedCard.classList.remove("dragging-source");
+    draggedCard.classList.remove("dragging");
+    draggedCard = null;
+    dragPlaceholder = null;
   }
 
   function handleDragStart(event) {
@@ -833,7 +869,20 @@
       return;
     }
 
+    draggedCard = card;
+    hasDragReordered = false;
+
+    const placeholder = ensureDragPlaceholder(card);
+    if (placeholder && card.nextSibling !== placeholder) {
+      itemsGridActive.insertBefore(placeholder, card.nextSibling);
+    }
+
     card.classList.add("dragging");
+    setTimeout(function () {
+      if (draggedCard === card) {
+        card.classList.add("dragging-source");
+      }
+    }, 0);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", card.dataset.id);
   }
@@ -843,29 +892,33 @@
       return;
     }
 
-    const draggingCard = itemsGridActive.querySelector(".gallery-card.dragging");
-    if (!draggingCard) {
+    if (!draggedCard || !dragPlaceholder) {
       return;
     }
 
     event.preventDefault();
 
     const targetCard = event.target.closest(".gallery-card");
-    if (!targetCard || targetCard === draggingCard || !itemsGridActive.contains(targetCard)) {
+    if (!targetCard || targetCard === draggedCard || targetCard === dragPlaceholder || !itemsGridActive.contains(targetCard)) {
+      if (!targetCard) {
+        itemsGridActive.appendChild(dragPlaceholder);
+        hasDragReordered = true;
+      }
       return;
     }
 
-    clearDragStates();
-    draggingCard.classList.add("dragging");
+    itemsGridActive.querySelectorAll(".gallery-card.drag-over").forEach(function (card) {
+      card.classList.remove("drag-over");
+    });
     targetCard.classList.add("drag-over");
 
     const rect = targetCard.getBoundingClientRect();
     const before = event.clientY < rect.top + rect.height / 2;
+    const desiredPosition = before ? targetCard : targetCard.nextSibling;
 
-    if (before) {
-      itemsGridActive.insertBefore(draggingCard, targetCard);
-    } else {
-      itemsGridActive.insertBefore(draggingCard, targetCard.nextSibling);
+    if (desiredPosition !== dragPlaceholder) {
+      itemsGridActive.insertBefore(dragPlaceholder, desiredPosition);
+      hasDragReordered = true;
     }
   }
 
@@ -929,8 +982,12 @@
   }
 
   async function handleDragEnd() {
+    placeDraggedCardToPlaceholder();
     clearDragStates();
-    await persistOrderFromDom();
+    if (hasDragReordered) {
+      await persistOrderFromDom();
+    }
+    hasDragReordered = false;
   }
 
   function selectAllByState(isPublished) {

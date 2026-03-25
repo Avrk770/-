@@ -7,6 +7,13 @@
   const dashboardState = document.getElementById("dashboard-state");
 
   const loginForm = document.getElementById("login-form");
+  const signOutBtn = document.getElementById("sign-out");
+  const refreshBtn = document.getElementById("refresh-items");
+  const feedbackEl = document.getElementById("feedback");
+
+  const uploadOpenBtn = document.getElementById("upload-open");
+  const uploadModal = document.getElementById("upload-modal");
+  const uploadCloseBtn = document.getElementById("upload-close");
   const uploadForm = document.getElementById("upload-form");
   const fileInput = document.getElementById("image_file");
   const selectedFileName = document.getElementById("selected-file-name");
@@ -16,25 +23,28 @@
   const uploadProgressText = document.getElementById("upload-progress-text");
   const uploadProgressDetail = document.getElementById("upload-progress-detail");
 
-  const signOutBtn = document.getElementById("sign-out");
-  const refreshBtn = document.getElementById("refresh-items");
-  const feedbackEl = document.getElementById("feedback");
-
-  const itemsGridActive = document.getElementById("items-grid-active");
-  const itemsGridHidden = document.getElementById("items-grid-hidden");
-  const itemsCountActiveEl = document.getElementById("items-count-active");
-  const itemsCountHiddenEl = document.getElementById("items-count-hidden");
-
+  const editToggleBtn = document.getElementById("edit-toggle");
+  const selectionActions = document.getElementById("selection-actions");
   const selectedCountEl = document.getElementById("selected-count");
   const selectAllActiveBtn = document.getElementById("select-all-active");
   const selectAllHiddenBtn = document.getElementById("select-all-hidden");
   const clearSelectionBtn = document.getElementById("clear-selection");
   const deleteSelectedBtn = document.getElementById("delete-selected");
 
+  const hiddenToggleBtn = document.getElementById("hidden-toggle");
+  const hiddenToggleIcon = document.getElementById("hidden-toggle-icon");
+  const hiddenSectionBody = document.getElementById("hidden-section-body");
+
+  const itemsGridActive = document.getElementById("items-grid-active");
+  const itemsGridHidden = document.getElementById("items-grid-hidden");
+  const itemsCountActiveEl = document.getElementById("items-count-active");
+  const itemsCountHiddenEl = document.getElementById("items-count-hidden");
+
   let supabaseClient = null;
   let galleryItems = [];
   let selectedIds = new Set();
-  let dragSourceId = null;
+  let isEditMode = false;
+  let isHiddenOpen = false;
   let isSavingOrder = false;
 
   function setFeedback(type, message) {
@@ -98,6 +108,11 @@
       .replaceAll("'", "&#39;");
   }
 
+  function setCardSelectedClass(card, isSelected) {
+    card.classList.toggle("ring-2", isSelected);
+    card.classList.toggle("ring-primary", isSelected);
+  }
+
   function updateSelectionUi() {
     if (selectedCountEl) {
       selectedCountEl.textContent = selectedIds.size + " נבחרו";
@@ -106,16 +121,14 @@
     if (deleteSelectedBtn) {
       deleteSelectedBtn.disabled = selectedIds.size === 0;
     }
-  }
 
-  function setCardSelectedClass(card, isSelected) {
-    card.classList.toggle("ring-2", isSelected);
-    card.classList.toggle("ring-primary", isSelected);
+    if (selectionActions) {
+      selectionActions.classList.toggle("hidden", !(isEditMode && selectedIds.size > 0));
+    }
   }
 
   function applySelectionToDom() {
-    const cards = document.querySelectorAll(".gallery-card");
-    cards.forEach(function (card) {
+    document.querySelectorAll(".gallery-card").forEach(function (card) {
       const id = card.dataset.id;
       const isSelected = selectedIds.has(id);
       const checkbox = card.querySelector(".select-item");
@@ -144,7 +157,48 @@
     updateSelectionUi();
   }
 
-  function renderSection(gridEl, items, isActive) {
+  function updateEditUi() {
+    if (editToggleBtn) {
+      editToggleBtn.textContent = isEditMode ? "סגור עריכה" : "מצב עריכה";
+      editToggleBtn.classList.toggle("bg-slate-900", isEditMode);
+      editToggleBtn.classList.toggle("text-white", isEditMode);
+    }
+
+    if (!isEditMode) {
+      selectedIds.clear();
+    }
+
+    updateSelectionUi();
+    renderItems(galleryItems);
+  }
+
+  function updateHiddenSectionUi() {
+    if (hiddenSectionBody) {
+      hiddenSectionBody.classList.toggle("hidden", !isHiddenOpen);
+    }
+
+    if (hiddenToggleIcon) {
+      hiddenToggleIcon.textContent = isHiddenOpen ? "-" : "+";
+    }
+  }
+
+  function openUploadModal() {
+    if (!uploadModal) {
+      return;
+    }
+
+    uploadModal.classList.remove("hidden");
+  }
+
+  function closeUploadModal() {
+    if (!uploadModal) {
+      return;
+    }
+
+    uploadModal.classList.add("hidden");
+  }
+
+  function renderSection(gridEl, items, isActiveSection) {
     if (!gridEl) {
       return;
     }
@@ -152,7 +206,7 @@
     if (!items.length) {
       gridEl.innerHTML =
         '<div class="col-span-full rounded-xl border border-outline-variant bg-surface-container-low p-5 text-center text-on-surface-variant text-sm">' +
-        (isActive ? "אין תמונות פעילות כרגע." : "אין תמונות מוסתרות כרגע.") +
+        (isActiveSection ? "אין תמונות פעילות כרגע." : "אין תמונות מוסתרות כרגע.") +
         "</div>";
       return;
     }
@@ -162,13 +216,12 @@
         const imageUrl = escapeHtml(item.image_url || "");
         const storagePath = escapeHtml(item.storage_path || "");
         const isSelected = selectedIds.has(item.id);
-        const publishedLabel = item.is_published ? "באתר" : "מוסתר";
 
         return (
           '<article class="gallery-card rounded-xl border border-outline-variant bg-white overflow-hidden shadow-sm ' +
           (isSelected ? "ring-2 ring-primary" : "") +
           '" ' +
-          (isActive ? 'draggable="true" ' : "") +
+          (isEditMode && isActiveSection ? 'draggable="true" ' : "") +
           'data-id="' +
           item.id +
           '" data-storage-path="' +
@@ -180,33 +233,30 @@
           '<img src="' +
           imageUrl +
           '" alt="" class="h-full w-full object-cover" draggable="false">' +
-          '<label class="absolute top-2 left-2 inline-flex items-center justify-center rounded-md bg-black/70 p-1.5 cursor-pointer">' +
-          '<input type="checkbox" class="select-item h-3.5 w-3.5" data-id="' +
-          item.id +
-          '" ' +
-          (isSelected ? "checked" : "") +
-          ">" +
-          "</label>" +
-          (isActive
-            ? '<span class="absolute top-2 left-11 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
-              (index + 1) +
-              "</span>"
-            : "") +
           '<span class="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs ' +
           (item.is_published ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700") +
           '">' +
-          publishedLabel +
+          (item.is_published ? "באתר" : "מוסתר") +
           "</span>" +
-          '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">' +
-          '<div class="grid grid-cols-2 gap-2">' +
-          '<button type="button" class="toggle-publish rounded-md bg-white/90 px-2 py-1.5 text-[11px] hover:bg-white">' +
-          (item.is_published ? "הסתר" : "פרסם") +
-          "</button>" +
-          '<button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button>' +
-          "</div>" +
-          "</div>" +
-          (isActive
+          (isEditMode
+            ? '<label class="absolute top-2 left-2 inline-flex items-center justify-center rounded-md bg-black/70 p-1.5 cursor-pointer"><input type="checkbox" class="select-item h-3.5 w-3.5" data-id="' +
+              item.id +
+              '" ' +
+              (isSelected ? "checked" : "") +
+              "></label>"
+            : "") +
+          (isEditMode
+            ? '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2"><div class="grid grid-cols-2 gap-2"><button type="button" class="toggle-publish rounded-md bg-white/90 px-2 py-1.5 text-[11px] hover:bg-white">' +
+              (item.is_published ? "הסתר" : "פרסם") +
+              '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div></div>'
+            : "") +
+          (isEditMode && isActiveSection
             ? '<span class="absolute bottom-2 right-2 rounded bg-black/70 text-white px-1.5 py-0.5 text-[10px]">גרירה</span>'
+            : "") +
+          (isEditMode && isActiveSection
+            ? '<span class="absolute top-2 left-11 rounded-md bg-black/70 text-white px-2 py-0.5 text-[11px]">#' +
+              (index + 1) +
+              "</span>"
             : "") +
           "</div>" +
           "</article>"
@@ -486,6 +536,7 @@
 
     if (successCount && !failedCount) {
       setFeedback("success", "הועלו בהצלחה " + successCount + " תמונות.");
+      closeUploadModal();
       await loadItems();
       return;
     }
@@ -517,6 +568,10 @@
   }
 
   async function togglePublish(itemId) {
+    if (!isEditMode) {
+      return;
+    }
+
     const item = getItemById(itemId);
     if (!item) {
       return;
@@ -561,6 +616,10 @@
   }
 
   async function handleSingleDelete(itemId) {
+    if (!isEditMode) {
+      return;
+    }
+
     const confirmed = window.confirm("למחוק את התמונה מהגלריה?");
     if (!confirmed) {
       return;
@@ -579,7 +638,7 @@
   }
 
   async function handleBulkDelete() {
-    if (!selectedIds.size) {
+    if (!isEditMode || !selectedIds.size) {
       return;
     }
 
@@ -622,7 +681,7 @@
   }
 
   function handleGridChange(event) {
-    if (!event.target.classList.contains("select-item")) {
+    if (!isEditMode || !event.target.classList.contains("select-item")) {
       return;
     }
 
@@ -675,19 +734,22 @@
   }
 
   function handleDragStart(event) {
+    if (!isEditMode) {
+      return;
+    }
+
     const card = event.target.closest(".gallery-card");
     if (!card || !itemsGridActive || !itemsGridActive.contains(card)) {
       return;
     }
 
-    dragSourceId = card.dataset.id;
     card.classList.add("dragging");
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", dragSourceId);
+    event.dataTransfer.setData("text/plain", card.dataset.id);
   }
 
   function handleDragOver(event) {
-    if (!itemsGridActive) {
+    if (!isEditMode || !itemsGridActive) {
       return;
     }
 
@@ -722,7 +784,7 @@
   }
 
   async function persistOrderFromDom() {
-    if (!itemsGridActive) {
+    if (!isEditMode || !itemsGridActive) {
       return;
     }
 
@@ -779,10 +841,13 @@
   async function handleDragEnd() {
     clearDragStates();
     await persistOrderFromDom();
-    dragSourceId = null;
   }
 
   function selectAllByState(isPublished) {
+    if (!isEditMode) {
+      return;
+    }
+
     galleryItems.forEach(function (item) {
       if (item.is_published === isPublished) {
         selectedIds.add(item.id);
@@ -825,44 +890,56 @@
     supabaseClient = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
 
     loginForm.addEventListener("submit", handleLogin);
-    uploadForm.addEventListener("submit", handleUpload);
-    fileInput.addEventListener("change", updateSelectedFileName);
     signOutBtn.addEventListener("click", handleSignOut);
     refreshBtn.addEventListener("click", loadItems);
 
-    if (itemsGridActive) {
-      itemsGridActive.addEventListener("click", handleGridClick);
-      itemsGridActive.addEventListener("change", handleGridChange);
-      itemsGridActive.addEventListener("dragstart", handleDragStart);
-      itemsGridActive.addEventListener("dragover", handleDragOver);
-      itemsGridActive.addEventListener("drop", handleDrop);
-      itemsGridActive.addEventListener("dragend", handleDragEnd);
-    }
+    uploadOpenBtn.addEventListener("click", openUploadModal);
+    uploadCloseBtn.addEventListener("click", closeUploadModal);
+    uploadModal.addEventListener("click", function (event) {
+      if (event.target === uploadModal) {
+        closeUploadModal();
+      }
+    });
 
-    if (itemsGridHidden) {
-      itemsGridHidden.addEventListener("click", handleGridClick);
-      itemsGridHidden.addEventListener("change", handleGridChange);
-    }
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeUploadModal();
+      }
+    });
 
-    if (selectAllActiveBtn) {
-      selectAllActiveBtn.addEventListener("click", function () {
-        selectAllByState(true);
-      });
-    }
+    uploadForm.addEventListener("submit", handleUpload);
+    fileInput.addEventListener("change", updateSelectedFileName);
 
-    if (selectAllHiddenBtn) {
-      selectAllHiddenBtn.addEventListener("click", function () {
-        selectAllByState(false);
-      });
-    }
+    editToggleBtn.addEventListener("click", function () {
+      isEditMode = !isEditMode;
+      updateEditUi();
+    });
 
-    if (clearSelectionBtn) {
-      clearSelectionBtn.addEventListener("click", clearSelection);
-    }
+    hiddenToggleBtn.addEventListener("click", function () {
+      isHiddenOpen = !isHiddenOpen;
+      updateHiddenSectionUi();
+    });
 
-    if (deleteSelectedBtn) {
-      deleteSelectedBtn.addEventListener("click", handleBulkDelete);
-    }
+    itemsGridActive.addEventListener("click", handleGridClick);
+    itemsGridActive.addEventListener("change", handleGridChange);
+    itemsGridActive.addEventListener("dragstart", handleDragStart);
+    itemsGridActive.addEventListener("dragover", handleDragOver);
+    itemsGridActive.addEventListener("drop", handleDrop);
+    itemsGridActive.addEventListener("dragend", handleDragEnd);
+
+    itemsGridHidden.addEventListener("click", handleGridClick);
+    itemsGridHidden.addEventListener("change", handleGridChange);
+
+    selectAllActiveBtn.addEventListener("click", function () {
+      selectAllByState(true);
+    });
+
+    selectAllHiddenBtn.addEventListener("click", function () {
+      selectAllByState(false);
+    });
+
+    clearSelectionBtn.addEventListener("click", clearSelection);
+    deleteSelectedBtn.addEventListener("click", handleBulkDelete);
 
     supabaseClient.auth.onAuthStateChange(function (_event, session) {
       if (session) {
@@ -876,6 +953,8 @@
     updateSelectedFileName();
     resetUploadProgress();
     updateSelectionUi();
+    updateEditUi();
+    updateHiddenSectionUi();
     await initSession();
   }
 

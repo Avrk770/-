@@ -193,52 +193,49 @@
     const columns = gridColumns > 0 ? gridColumns : 2;
 
     document.querySelectorAll(".masonry-item").forEach(function (item, index) {
-      const delay = (index % columns) * 70;
+      const delay = (index % columns) * 150;
       item.style.transitionDelay = delay + "ms";
       observer.observe(item);
     });
   }
 
   function updateLightboxContent(isInitial) {
-    lightboxImg.classList.remove("is-ready");
-    lightboxImg.classList.add("is-loading");
+    if (!isInitial) {
+      lightboxImg.style.opacity = "0";
+      lightboxImg.style.transform = "scale(0.95)";
+    }
 
-    setTimeout(
-      function () {
-        lightboxImg.src = currentItems[currentIndex].image_url;
-        lightboxImg.alt = currentItems[currentIndex].alt_text || currentItems[currentIndex].title || "Gallery image";
-        lightboxImg.onload = function () {
-          lightboxImg.classList.remove("is-loading");
-          lightboxImg.classList.add("is-ready");
-        };
-      },
-      isInitial ? 10 : 120
-    );
+    setTimeout(function () {
+      lightboxImg.src = currentItems[currentIndex].image_url;
+      lightboxImg.alt = currentItems[currentIndex].alt_text || currentItems[currentIndex].title || "Gallery image";
+      lightboxImg.onload = function () {
+        lightboxImg.style.opacity = "1";
+        lightboxImg.style.transform = "scale(1)";
+      };
+    }, isInitial ? 50 : 200);
   }
 
   function openLightbox(index) {
     currentIndex = index;
     modal.classList.remove("hidden");
 
-    requestAnimationFrame(function () {
+    setTimeout(function () {
       modal.classList.add("opacity-100");
-      modal.classList.add("is-open");
       updateLightboxContent(true);
-    });
+    }, 10);
 
     document.body.style.overflow = "hidden";
   }
 
   function closeLightbox() {
     modal.classList.remove("opacity-100");
-    modal.classList.remove("is-open");
-    lightboxImg.classList.remove("is-ready");
-    lightboxImg.classList.add("is-loading");
+    lightboxImg.style.transform = "scale(0.9)";
+    lightboxImg.style.opacity = "0";
 
     setTimeout(function () {
       modal.classList.add("hidden");
       lightboxImg.src = "";
-    }, 300);
+    }, 400);
 
     document.body.style.overflow = "";
   }

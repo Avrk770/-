@@ -76,6 +76,7 @@
   let featuredAnimationFrame = null;
   let featuredCurrentX = 0;
   let featuredSetWidth = 0;
+  let featuredCycleWidth = 0;
   let isFeaturedPaused = false;
   let featuredResizeTimer = null;
 
@@ -284,6 +285,7 @@
 
     featuredCurrentX = 0;
     featuredSetWidth = 0;
+    featuredCycleWidth = 0;
   }
 
   function ensureFeaturedSetIsWideEnough() {
@@ -327,6 +329,13 @@
       return;
     }
 
+    const trackStyles = window.getComputedStyle(featuredTrack);
+    const trackGap = parseFloat(trackStyles.columnGap || trackStyles.gap || "0") || 0;
+    featuredCycleWidth = featuredSetWidth + trackGap;
+    if (!featuredCycleWidth) {
+      return;
+    }
+
     featuredCurrentX = 0;
     let previousTs = performance.now();
     const pixelsPerSecond = 42;
@@ -338,8 +347,8 @@
       if (!isFeaturedPaused) {
         featuredCurrentX -= (pixelsPerSecond * delta) / 1000;
 
-        if (Math.abs(featuredCurrentX) >= featuredSetWidth) {
-          featuredCurrentX += featuredSetWidth;
+        if (Math.abs(featuredCurrentX) >= featuredCycleWidth) {
+          featuredCurrentX += featuredCycleWidth;
         }
 
         featuredTrack.style.transform = "translate3d(" + featuredCurrentX + "px, 0, 0)";

@@ -183,9 +183,7 @@
     const featuredItems = items.filter(function (item) {
       return Boolean(item.is_featured);
     });
-    const regularItems = items.filter(function (item) {
-      return !item.is_featured;
-    });
+    const regularItems = items.slice();
 
     renderFeaturedSection(featuredItems, indexById);
     renderRegularGallery(regularItems, indexById);

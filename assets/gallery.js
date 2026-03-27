@@ -67,8 +67,12 @@
   const closeBtn = document.getElementById("close-lightbox");
   const prevBtn = document.getElementById("prev-lightbox");
   const nextBtn = document.getElementById("next-lightbox");
+  const featuredSection = document.getElementById("featured-section");
+  const featuredViewport = document.getElementById("featured-viewport");
+  const featuredTrack = document.getElementById("featured-track");
   const masonryGrid = document.getElementById("masonry-grid");
   const galleryStatus = document.getElementById("gallery-status");
+  const FEATURED_ITEMS_COUNT = 8;
 
   function escapeHtml(value) {
     return String(value || "")
@@ -132,8 +136,73 @@
     currentItems = items.slice();
 
     if (!items.length) {
+      if (featuredViewport) {
+        featuredViewport.classList.add("hidden");
+      }
+      if (featuredTrack) {
+        featuredTrack.innerHTML = "";
+      }
       masonryGrid.innerHTML =
         '<div class="rounded-2xl bg-surface-container-low dark:bg-white/5 p-8 border border-black/[0.05] dark:border-white/10"><p class="text-lg">אין כרגע עבודות להצגה.</p></div>';
+      return;
+    }
+
+    const featuredCount = Math.min(FEATURED_ITEMS_COUNT, items.length);
+    const featuredItems = items.slice(0, featuredCount);
+    const regularItems = items.slice(featuredCount);
+
+    renderFeaturedSection(featuredItems);
+    renderRegularGallery(regularItems, featuredCount);
+
+    if (regularItems.length) {
+      initRevealAnimation();
+    }
+
+    bindGalleryEvents();
+  }
+
+  function renderFeaturedSection(items) {
+    if (!featuredViewport || !featuredTrack || !featuredSection) {
+      return;
+    }
+
+    if (!items.length) {
+      featuredSection.classList.add("hidden");
+      featuredTrack.innerHTML = "";
+      return;
+    }
+
+    featuredSection.classList.remove("hidden");
+
+    const cardsHtml = items
+      .map(function (item, index) {
+        const title = escapeHtml(item.title || "");
+        const altText = escapeHtml(item.alt_text || item.title || "Portfolio image");
+        const imageUrl = escapeHtml(item.image_url);
+
+        return (
+          '<article class="featured-card group">' +
+          '<img class="gallery-image featured-image cursor-zoom-in" src="' +
+          imageUrl +
+          '" alt="' +
+          altText +
+          '" draggable="false" data-index="' +
+          index +
+          '">' +
+          (title ? '<div class="px-3 py-2 text-sm text-on-surface-variant dark:text-white/70">' + title + "</div>" : "") +
+          "</article>"
+        );
+      })
+      .join("");
+
+    featuredTrack.innerHTML = cardsHtml + cardsHtml;
+    featuredViewport.classList.remove("hidden");
+  }
+
+  function renderRegularGallery(items, startIndex) {
+    if (!items.length) {
+      masonryGrid.innerHTML =
+        '<div class="rounded-2xl bg-surface-container-low dark:bg-white/5 p-8 border border-black/[0.05] dark:border-white/10"><p class="text-lg">אין כרגע עבודות נוספות להצגה.</p></div>';
       return;
     }
 
@@ -142,6 +211,7 @@
         const title = escapeHtml(item.title || "");
         const altText = escapeHtml(item.alt_text || item.title || "Portfolio image");
         const imageUrl = escapeHtml(item.image_url);
+        const globalIndex = startIndex + index;
 
         return (
           '<article class="masonry-item">' +
@@ -151,7 +221,7 @@
           '" alt="' +
           altText +
           '" draggable="false" data-index="' +
-          index +
+          globalIndex +
           '">' +
           (title
             ? '<div class="p-4 text-sm text-on-surface-variant dark:text-white/70 font-medium">' + title + "</div>"
@@ -161,9 +231,6 @@
         );
       })
       .join("");
-
-    initRevealAnimation();
-    bindGalleryEvents();
   }
 
   function initRevealAnimation() {

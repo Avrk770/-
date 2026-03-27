@@ -161,11 +161,13 @@
         align-items: stretch;
         gap: 0.75rem;
         width: max-content;
-        animation: featuredAutoScroll 34s linear infinite;
+        transform: translate3d(0, 0, 0);
       }
 
-      .featured-viewport:hover .featured-track {
-        animation-play-state: paused;
+      .featured-set {
+        display: flex;
+        align-items: stretch;
+        gap: inherit;
       }
 
       .featured-card {
@@ -273,12 +275,9 @@
         -webkit-backdrop-filter: blur(24px) saturate(180%);
       }
 
-      @keyframes featuredAutoScroll {
-        from {
-          transform: translateX(0);
-        }
-        to {
-          transform: translateX(-50%);
+      @media (prefers-reduced-motion: reduce) {
+        .featured-track {
+          transform: none !important;
         }
       }
     </style>
@@ -340,7 +339,7 @@
         <p id="gallery-status" class="text-sm md:text-base text-on-surface-variant dark:text-white/60"></p>
       </div>
 
-      <section id="featured-section" class="mb-10 md:mb-14 space-y-3">
+      <section id="featured-section" class="hidden mb-10 md:mb-14 space-y-3">
         <h2 class="text-2xl md:text-3xl text-on-surface dark:text-white">עבודות נבחרות</h2>
         <div id="featured-viewport" class="featured-viewport hidden">
           <div id="featured-track" class="featured-track"></div>

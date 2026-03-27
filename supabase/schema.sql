@@ -9,12 +9,16 @@ create table if not exists public.gallery_items (
   category text,
   sort_order integer not null default 1000,
   is_published boolean not null default true,
+  is_featured boolean not null default false,
   image_url text not null,
   storage_path text
 );
 
 create index if not exists gallery_items_published_sort_idx
   on public.gallery_items (is_published, sort_order, created_at desc);
+
+create index if not exists gallery_items_featured_sort_idx
+  on public.gallery_items (is_published, is_featured, sort_order, created_at desc);
 
 create or replace function public.set_gallery_items_updated_at()
 returns trigger

@@ -234,7 +234,14 @@
       })
       .join("");
 
-    featuredTrack.innerHTML = '<div class="featured-set">' + cardsHtml + '</div><div class="featured-set" aria-hidden="true">' + cardsHtml + "</div>";
+    featuredTrack.innerHTML =
+      '<div class="featured-set">' +
+      cardsHtml +
+      '</div><div class="featured-set" aria-hidden="true">' +
+      cardsHtml +
+      '</div><div class="featured-set" aria-hidden="true">' +
+      cardsHtml +
+      "</div>";
     featuredViewport.classList.remove("hidden");
     startFeaturedMarquee();
   }
@@ -295,21 +302,21 @@
 
     const sets = featuredTrack.querySelectorAll(".featured-set");
     const firstSet = sets[0];
-    const secondSet = sets[1];
-
-    if (!firstSet || !secondSet) {
+    if (!firstSet || sets.length < 2) {
       return;
     }
 
     const viewportWidth = featuredViewport.clientWidth || window.innerWidth || 1;
     const baseHtml = firstSet.innerHTML;
     let guard = 0;
-    while (firstSet.scrollWidth < viewportWidth * 1.2 && guard < 10) {
+    while (firstSet.scrollWidth < viewportWidth * 1.8 && guard < 12) {
       firstSet.innerHTML += baseHtml;
       guard += 1;
     }
 
-    secondSet.innerHTML = firstSet.innerHTML;
+    for (let i = 1; i < sets.length; i += 1) {
+      sets[i].innerHTML = firstSet.innerHTML;
+    }
   }
 
   function startFeaturedMarquee() {
@@ -319,19 +326,19 @@
 
     ensureFeaturedSetIsWideEnough();
 
-    const firstSet = featuredTrack.querySelector(".featured-set");
-    if (!firstSet) {
+    const sets = featuredTrack.querySelectorAll(".featured-set");
+    const firstSet = sets[0];
+    const secondSet = sets[1];
+    if (!firstSet || !secondSet) {
       return;
     }
 
-    featuredSetWidth = firstSet.scrollWidth;
+    featuredSetWidth = firstSet.getBoundingClientRect().width;
     if (!featuredSetWidth) {
       return;
     }
 
-    const trackStyles = window.getComputedStyle(featuredTrack);
-    const trackGap = parseFloat(trackStyles.columnGap || trackStyles.gap || "0") || 0;
-    featuredCycleWidth = featuredSetWidth + trackGap;
+    featuredCycleWidth = secondSet.offsetLeft - firstSet.offsetLeft;
     if (!featuredCycleWidth) {
       return;
     }
@@ -345,13 +352,8 @@
       previousTs = ts;
 
       if (!isFeaturedPaused) {
-        featuredCurrentX -= (pixelsPerSecond * delta) / 1000;
-
-        if (Math.abs(featuredCurrentX) >= featuredCycleWidth) {
-          featuredCurrentX += featuredCycleWidth;
-        }
-
-        featuredTrack.style.transform = "translate3d(" + featuredCurrentX + "px, 0, 0)";
+        featuredCurrentX = (featuredCurrentX + (pixelsPerSecond * delta) / 1000) % featuredCycleWidth;
+        featuredTrack.style.transform = "translate3d(" + -featuredCurrentX + "px, 0, 0)";
       }
 
       featuredAnimationFrame = requestAnimationFrame(tick);

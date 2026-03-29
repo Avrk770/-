@@ -67,18 +67,8 @@
   const closeBtn = document.getElementById("close-lightbox");
   const prevBtn = document.getElementById("prev-lightbox");
   const nextBtn = document.getElementById("next-lightbox");
-  const featuredSection = document.getElementById("featured-section");
-  const featuredViewport = document.getElementById("featured-viewport");
-  const featuredTrack = document.getElementById("featured-track");
   const masonryGrid = document.getElementById("masonry-grid");
   const galleryStatus = document.getElementById("gallery-status");
-
-  let featuredAnimationFrame = null;
-  let featuredCurrentX = 0;
-  let featuredSetWidth = 0;
-  let featuredCycleWidth = 0;
-  let isFeaturedPaused = false;
-  let featuredResizeTimer = null;
 
   function escapeHtml(value) {
     return String(value || "")
@@ -87,11 +77,6 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
-  }
-
-  function isMissingFeaturedColumnError(error) {
-    const message = String((error && error.message) || "").toLowerCase();
-    return message.includes("is_featured") && (message.includes("column") || message.includes("schema"));
   }
 
   function setStatus(message) {
@@ -121,26 +106,12 @@
       return fallbackItems;
     }
 
-    let { data, error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from("gallery_items")
-      .select("id, title, alt_text, image_url, sort_order, created_at, is_featured")
+      .select("id, title, alt_text, image_url, sort_order, created_at")
       .eq("is_published", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
-
-    if (error && isMissingFeaturedColumnError(error)) {
-      const fallbackResult = await supabaseClient
-        .from("gallery_items")
-        .select("id, title, alt_text, image_url, sort_order, created_at")
-        .eq("is_published", true)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-
-      data = (fallbackResult.data || []).map(function (item) {
-        return Object.assign({}, item, { is_featured: false });
-      });
-      error = fallbackResult.error;
-    }
 
     if (error) {
       console.error("Failed to fetch gallery items", error);
@@ -159,97 +130,10 @@
 
   function renderGallery(items) {
     currentItems = items.slice();
-    const indexById = new Map(
-      currentItems.map(function (item, index) {
-        return [item.id, index];
-      })
-    );
 
     if (!items.length) {
-      stopFeaturedMarquee();
-      if (featuredSection) {
-        featuredSection.classList.add("hidden");
-      }
-      if (featuredViewport) {
-        featuredViewport.classList.add("hidden");
-      }
-      if (featuredTrack) {
-        featuredTrack.innerHTML = "";
-      }
       masonryGrid.innerHTML =
         '<div class="rounded-2xl bg-surface-container-low dark:bg-white/5 p-8 border border-black/[0.05] dark:border-white/10"><p class="text-lg">אין כרגע עבודות להצגה.</p></div>';
-      return;
-    }
-
-    const featuredItems = items.filter(function (item) {
-      return Boolean(item.is_featured);
-    });
-    const regularItems = items.slice();
-
-    renderFeaturedSection(featuredItems, indexById);
-    renderRegularGallery(regularItems, indexById);
-
-    if (regularItems.length) {
-      initRevealAnimation();
-    }
-
-    bindGalleryEvents();
-  }
-
-  function renderFeaturedSection(items, indexById) {
-    if (!featuredViewport || !featuredTrack || !featuredSection) {
-      return;
-    }
-
-    stopFeaturedMarquee();
-
-    if (!items.length) {
-      featuredSection.classList.add("hidden");
-      featuredViewport.classList.add("hidden");
-      featuredTrack.innerHTML = "";
-      return;
-    }
-
-    featuredSection.classList.remove("hidden");
-
-    const cardsHtml = items
-      .map(function (item) {
-        const title = escapeHtml(item.title || "");
-        const altText = escapeHtml(item.alt_text || item.title || "Portfolio image");
-        const imageUrl = escapeHtml(item.image_url);
-        const globalIndex = Number(indexById.get(item.id) || 0);
-
-        return (
-          '<article class="featured-card group">' +
-          '<img class="gallery-image featured-image cursor-zoom-in" src="' +
-          imageUrl +
-          '" alt="' +
-          altText +
-          '" draggable="false" data-index="' +
-          globalIndex +
-          '">' +
-          (title ? '<div class="px-3 py-2 text-sm text-on-surface-variant dark:text-white/70">' + title + "</div>" : "") +
-          "</article>"
-        );
-      })
-      .join("");
-
-    featuredTrack.innerHTML =
-      '<div class="featured-set">' +
-      cardsHtml +
-      '</div><div class="featured-set" aria-hidden="true">' +
-      cardsHtml +
-      '</div><div class="featured-set" aria-hidden="true">' +
-      cardsHtml +
-      "</div>";
-    featuredViewport.classList.remove("hidden");
-    startFeaturedMarquee();
-  }
-
-  function renderRegularGallery(items, indexById) {
-    if (!items.length) {
-      masonryGrid.innerHTML =
-        '<div class="rounded-2xl bg-surface-container-low dark:bg-white/5 p-8 border border-black/[0.05] dark:border-white/10"><p class="text-lg">אין כרגע עבודות נוספות להצגה.</p></div>';
       return;
     }
 
@@ -258,7 +142,6 @@
         const title = escapeHtml(item.title || "");
         const altText = escapeHtml(item.alt_text || item.title || "Portfolio image");
         const imageUrl = escapeHtml(item.image_url);
-        const globalIndex = Number(indexById.get(item.id) || index);
 
         return (
           '<article class="masonry-item">' +
@@ -268,7 +151,7 @@
           '" alt="' +
           altText +
           '" draggable="false" data-index="' +
-          globalIndex +
+          index +
           '">' +
           (title
             ? '<div class="p-4 text-sm text-on-surface-variant dark:text-white/70 font-medium">' + title + "</div>"
@@ -278,88 +161,9 @@
         );
       })
       .join("");
-  }
 
-  function stopFeaturedMarquee() {
-    if (featuredAnimationFrame) {
-      cancelAnimationFrame(featuredAnimationFrame);
-      featuredAnimationFrame = null;
-    }
-
-    if (featuredTrack) {
-      featuredTrack.style.transform = "translate3d(0, 0, 0)";
-    }
-
-    featuredCurrentX = 0;
-    featuredSetWidth = 0;
-    featuredCycleWidth = 0;
-  }
-
-  function ensureFeaturedSetIsWideEnough() {
-    if (!featuredTrack || !featuredViewport) {
-      return;
-    }
-
-    const sets = featuredTrack.querySelectorAll(".featured-set");
-    const firstSet = sets[0];
-    if (!firstSet || sets.length < 2) {
-      return;
-    }
-
-    const viewportWidth = featuredViewport.clientWidth || window.innerWidth || 1;
-    const baseHtml = firstSet.innerHTML;
-    let guard = 0;
-    while (firstSet.scrollWidth < viewportWidth * 1.8 && guard < 12) {
-      firstSet.innerHTML += baseHtml;
-      guard += 1;
-    }
-
-    for (let i = 1; i < sets.length; i += 1) {
-      sets[i].innerHTML = firstSet.innerHTML;
-    }
-  }
-
-  function startFeaturedMarquee() {
-    if (!featuredViewport || !featuredTrack || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    ensureFeaturedSetIsWideEnough();
-
-    const sets = featuredTrack.querySelectorAll(".featured-set");
-    const firstSet = sets[0];
-    const secondSet = sets[1];
-    if (!firstSet || !secondSet) {
-      return;
-    }
-
-    featuredSetWidth = firstSet.getBoundingClientRect().width;
-    if (!featuredSetWidth) {
-      return;
-    }
-
-    featuredCycleWidth = secondSet.offsetLeft - firstSet.offsetLeft;
-    if (!featuredCycleWidth) {
-      return;
-    }
-
-    featuredCurrentX = 0;
-    let previousTs = performance.now();
-    const pixelsPerSecond = 42;
-
-    function tick(ts) {
-      const delta = ts - previousTs;
-      previousTs = ts;
-
-      if (!isFeaturedPaused) {
-        featuredCurrentX = (featuredCurrentX + (pixelsPerSecond * delta) / 1000) % featuredCycleWidth;
-        featuredTrack.style.transform = "translate3d(" + -featuredCurrentX + "px, 0, 0)";
-      }
-
-      featuredAnimationFrame = requestAnimationFrame(tick);
-    }
-
-    featuredAnimationFrame = requestAnimationFrame(tick);
+    initRevealAnimation();
+    bindGalleryEvents();
   }
 
   function initRevealAnimation() {
@@ -452,49 +256,6 @@
       img.addEventListener("click", function () {
         openLightbox(Number(img.dataset.index));
       });
-    });
-  }
-
-  function initFeaturedInteractions() {
-    if (!featuredViewport) {
-      return;
-    }
-
-    featuredViewport.addEventListener("mouseenter", function () {
-      isFeaturedPaused = true;
-    });
-
-    featuredViewport.addEventListener("mouseleave", function () {
-      isFeaturedPaused = false;
-    });
-
-    featuredViewport.addEventListener(
-      "touchstart",
-      function () {
-        isFeaturedPaused = true;
-      },
-      { passive: true }
-    );
-
-    featuredViewport.addEventListener(
-      "touchend",
-      function () {
-        isFeaturedPaused = false;
-      },
-      { passive: true }
-    );
-
-    window.addEventListener("resize", function () {
-      if (featuredResizeTimer) {
-        clearTimeout(featuredResizeTimer);
-      }
-
-      featuredResizeTimer = setTimeout(function () {
-        if (!featuredViewport.classList.contains("hidden")) {
-          stopFeaturedMarquee();
-          startFeaturedMarquee();
-        }
-      }, 150);
     });
   }
 
@@ -640,7 +401,6 @@
   async function init() {
     initThemeToggle();
     initLightboxControls();
-    initFeaturedInteractions();
     initWhatsappCta();
     initMediaProtection();
 

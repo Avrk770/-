@@ -51,8 +51,6 @@
   let isEditMode = false;
   let isHiddenOpen = false;
   let isSavingOrder = false;
-  let supportsFeaturedSelection = true;
-  let hasShownFeaturedHint = false;
   let pendingActiveOrderIds = [];
   let hasUnsavedOrderChanges = false;
   let closeModalTimer = null;
@@ -133,11 +131,6 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
-  }
-
-  function isMissingFeaturedColumnError(error) {
-    const message = String((error && error.message) || "").toLowerCase();
-    return message.includes("is_featured") && (message.includes("column") || message.includes("schema"));
   }
 
   function setCardSelectedClass(card, isSelected) {
@@ -365,9 +358,6 @@
           '">' +
           (item.is_published ? "באתר" : "מוסתר") +
           "</span>" +
-          (item.is_featured
-            ? '<span class="absolute top-10 right-2 rounded-full bg-amber-100 text-amber-700 px-2.5 py-1 text-xs">נבחרת</span>'
-            : "") +
           (isEditMode
             ? '<label class="absolute top-2 left-2 inline-flex items-center justify-center rounded-md bg-black/70 p-1.5 cursor-pointer"><input type="checkbox" class="select-item h-3.5 w-3.5" data-id="' +
               item.id +
@@ -379,15 +369,6 @@
             ? '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2"><div class="grid grid-cols-2 gap-2"><button type="button" class="toggle-publish rounded-md bg-white/90 dark:bg-white/15 dark:text-white px-2 py-1.5 text-[11px] hover:bg-white dark:hover:bg-white/25">' +
               (item.is_published ? "הסתר" : "פרסם") +
               '</button><button type="button" class="delete-item rounded-md bg-red-500/90 text-white px-2 py-1.5 text-[11px] hover:bg-red-500">מחק</button></div>' +
-              (supportsFeaturedSelection && isActiveSection
-                ? '<button type="button" class="toggle-featured mt-2 w-full rounded-md px-2 py-1.5 text-[11px] ' +
-                  (item.is_featured
-                    ? "bg-amber-500/90 text-white hover:bg-amber-500"
-                    : "bg-white/90 dark:bg-white/15 dark:text-white hover:bg-white dark:hover:bg-white/25") +
-                  '">' +
-                  (item.is_featured ? "הסר מנבחרות" : "הוסף לנבחרות") +
-                  "</button>"
-                : "") +
               (isActiveSection
                 ? '<div class="mt-2 flex items-center gap-2 rounded-md bg-white/90 dark:bg-white/15 px-2 py-1.5"><span class="text-[11px] text-slate-800 dark:text-white/90">מיקום</span><input type="number" min="1" max="' +
                   maxPosition +
@@ -433,33 +414,11 @@
   }
 
   async function loadItems() {
-    let { data, error } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from("gallery_items")
-      .select("id, is_published, is_featured, image_url, storage_path, sort_order, created_at")
+      .select("id, is_published, image_url, storage_path, sort_order, created_at")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
-
-    if (error && isMissingFeaturedColumnError(error)) {
-      supportsFeaturedSelection = false;
-
-      const fallbackResult = await supabaseClient
-        .from("gallery_items")
-        .select("id, is_published, image_url, storage_path, sort_order, created_at")
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-
-      data = (fallbackResult.data || []).map(function (item) {
-        return Object.assign({}, item, { is_featured: false });
-      });
-      error = fallbackResult.error;
-
-      if (!hasShownFeaturedHint) {
-        hasShownFeaturedHint = true;
-        setFeedback("error", "כדי לבחור עבודות נבחרות צריך להריץ עדכון SQL קטן למסד הנתונים (is_featured).");
-      }
-    } else {
-      supportsFeaturedSelection = true;
-    }
 
     if (error) {
       setFeedback("error", "נכשלה טעינת פריטי הגלריה: " + error.message);
@@ -787,14 +746,10 @@
       return;
     }
 
-    const nextPublished = !item.is_published;
-    const payload = { is_published: nextPublished };
-
-    if (!nextPublished && supportsFeaturedSelection && item.is_featured) {
-      payload.is_featured = false;
-    }
-
-    const { error } = await supabaseClient.from("gallery_items").update(payload).eq("id", itemId);
+    const { error } = await supabaseClient
+      .from("gallery_items")
+      .update({ is_published: !item.is_published })
+      .eq("id", itemId);
 
     if (error) {
       setFeedback("error", "נכשל עדכון סטטוס הפרסום: " + error.message);
@@ -802,46 +757,6 @@
     }
 
     setFeedback("success", item.is_published ? "התמונה הוסתרה מהאתר." : "התמונה פורסמה באתר.");
-    await loadItems();
-  }
-
-  async function toggleFeatured(itemId) {
-    if (!isEditMode) {
-      return;
-    }
-
-    if (!supportsFeaturedSelection) {
-      setFeedback("error", "אי אפשר לבחור עבודות נבחרות לפני עדכון המסד.");
-      return;
-    }
-
-    const item = getItemById(itemId);
-    if (!item) {
-      return;
-    }
-
-    if (!item.is_published && !item.is_featured) {
-      setFeedback("error", "כדי להוסיף לנבחרות צריך קודם לפרסם את התמונה באתר.");
-      return;
-    }
-
-    const { error } = await supabaseClient
-      .from("gallery_items")
-      .update({ is_featured: !item.is_featured })
-      .eq("id", itemId);
-
-    if (error) {
-      if (isMissingFeaturedColumnError(error)) {
-        supportsFeaturedSelection = false;
-        setFeedback("error", "צריך להריץ עדכון SQL למסד כדי להשתמש בעבודות נבחרות.");
-      } else {
-        setFeedback("error", "נכשל עדכון עבודות נבחרות: " + error.message);
-      }
-      await loadItems();
-      return;
-    }
-
-    setFeedback("success", item.is_featured ? "העבודה הוסרה מהנבחרות." : "העבודה נוספה לנבחרות.");
     await loadItems();
   }
 
@@ -998,11 +913,6 @@
 
     if (event.target.classList.contains("toggle-publish")) {
       await togglePublish(itemId);
-      return;
-    }
-
-    if (event.target.classList.contains("toggle-featured")) {
-      await toggleFeatured(itemId);
       return;
     }
 

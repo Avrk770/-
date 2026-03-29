@@ -149,64 +149,10 @@
         gap: 0.75rem;
       }
 
-      .featured-viewport {
-        overflow: hidden;
-        border-radius: 1.25rem;
-      }
-
-      .featured-track {
-        display: flex;
-        direction: ltr;
-        align-items: stretch;
-        gap: 0.75rem;
-        width: max-content;
-        transform: translate3d(0, 0, 0);
-        will-change: transform;
-      }
-
-      .featured-set {
-        display: flex;
-        align-items: stretch;
-        gap: inherit;
-      }
-
-      .featured-card {
-        width: min(78vw, 380px);
-        border-radius: 1rem;
-        overflow: hidden;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        background: rgba(255, 255, 255, 0.6);
-      }
-
-      .dark .featured-card {
-        border-color: rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-      }
-
-      .featured-image {
-        width: 100%;
-        aspect-ratio: 4 / 3;
-        object-fit: cover;
-        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease;
-      }
-
-      .featured-card:hover .featured-image {
-        transform: scale(1.04);
-        filter: brightness(0.92);
-      }
-
       @media (min-width: 1024px) {
         .masonry-grid {
           grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
           gap: 1.5rem;
-        }
-
-        .featured-track {
-          gap: 1rem;
-        }
-
-        .featured-card {
-          width: min(36vw, 430px);
         }
       }
 
@@ -274,12 +220,6 @@
         backdrop-filter: blur(24px) saturate(180%);
         -webkit-backdrop-filter: blur(24px) saturate(180%);
       }
-
-      @media (prefers-reduced-motion: reduce) {
-        .featured-track {
-          transform: none !important;
-        }
-      }
     </style>
 
     <script>
@@ -339,17 +279,7 @@
         <p id="gallery-status" class="text-sm md:text-base text-on-surface-variant dark:text-white/60"></p>
       </div>
 
-      <section id="featured-section" class="hidden mb-10 md:mb-14 space-y-3">
-        <h2 class="text-2xl md:text-3xl text-on-surface dark:text-white">עבודות נבחרות</h2>
-        <div id="featured-viewport" class="featured-viewport hidden">
-          <div id="featured-track" class="featured-track"></div>
-        </div>
-      </section>
-
-      <section class="space-y-3">
-        <h2 class="text-2xl md:text-3xl text-on-surface dark:text-white">כל העבודות</h2>
-        <section id="masonry-grid" class="masonry-grid" aria-live="polite"></section>
-      </section>
+      <section id="masonry-grid" class="masonry-grid" aria-live="polite"></section>
     </main>
 
     <footer
